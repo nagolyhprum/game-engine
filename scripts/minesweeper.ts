@@ -27,8 +27,12 @@ const state = {
 };
 
 state.cells[0][0].isFlagged = true;
+
 state.cells[0][1].isDangerous = true;
+
 state.cells[0][2].isRevealed = true;
+
+state.cells[0][3].surroundingDangers = 5;
 
 const clear = () => {
   context.fillStyle = "lightgray";
