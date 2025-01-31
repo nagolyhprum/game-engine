@@ -24,6 +24,7 @@ canvas.width = WIDTH;
 canvas.height = HEIGHT;
 
 const explosion = new Audio("/public/explosion.wav");
+explosion.volume = 0.5;
 
 const onClick = (event: MouseEvent, isRightClick = false) => {
   const winState = getWinState();
