@@ -15,7 +15,6 @@ const html = `<!doctype html>
     </head>
     </body>
         <canvas>Canvas element not supported.</canvas>
-        <img width="300" height="300" src="/public/minesweeper-inspiration.png" />
         <script src="/scripts/minesweeper"></script>
     </body>
 </html>`;
@@ -50,7 +49,6 @@ Bun.serve({
       if (match) {
         const output = await Bun.build({
           entrypoints: [match.filePath],
-          minify: true,
         });
         console.log(output);
         const body = await Promise.all(

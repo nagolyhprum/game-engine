@@ -19,3 +19,11 @@ Coding Minesweeper from Scratch
 Coding whatever games viewers suggest.
 
 https://github.com/nagolyhprum/game-engine
+
+# Assets
+
+- https://opengameart.org/content/explosion-0
+
+# Ideas
+
+- Supaplex
