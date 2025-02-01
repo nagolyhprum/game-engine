@@ -26,7 +26,6 @@ export namespace Engine {
     };
     image?: Value<string, State, Data>;
     data: Data;
-    tag?: string;
     onClick?: (this: Drawable<State, Data>, state: State) => State;
     onContext?: (this: Drawable<State, Data>, state: State) => State;
     children?: Array<Drawable<State, Unknown>>;

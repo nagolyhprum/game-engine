@@ -1,4 +1,4 @@
-import { Engine, Unknown } from "./types";
+import { Engine, Unknown } from "../types";
 
 export const start = <State>(
   renderable: Engine.Config<State>
@@ -100,12 +100,12 @@ const draw = <State>(
       const image = loadImage(drawable.image, state, drawable);
       const dx = getValue(drawable.x, state, drawable),
         dy = getValue(drawable.y, state, drawable),
-        dw = getValue(drawable.width, state, drawable),
-        dh = getValue(drawable.height, state, drawable),
-        sx = getValue(drawable.source?.x, state, drawable),
-        sy = getValue(drawable.source?.y, state, drawable),
-        sw = getValue(drawable.source?.width, state, drawable),
-        sh = getValue(drawable.source?.height, state, drawable);
+        dw = getValue(drawable.width, state, drawable) ?? 0,
+        dh = getValue(drawable.height, state, drawable) ?? 0,
+        sx = getValue(drawable.source?.x, state, drawable) ?? 0,
+        sy = getValue(drawable.source?.y, state, drawable) ?? 0,
+        sw = getValue(drawable.source?.width, state, drawable) ?? dw,
+        sh = getValue(drawable.source?.height, state, drawable) ?? dh;
       signals.forEach((signal) => {
         if (signal.name === "click") {
           if (
@@ -145,7 +145,7 @@ const draw = <State>(
           getValue(drawable.baseline, state, drawable) || "top";
         context.font = `24px sans-sarif`;
         context.fillStyle = getValue(drawable.color, state, drawable);
-        context.fillText(text, dx, dy);
+        context.fillText(text, dx + dw / 2, dy + dh / 2);
       }
       state = draw(drawable.children ?? [], context, state, signals);
     }

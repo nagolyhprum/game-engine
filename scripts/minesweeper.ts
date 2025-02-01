@@ -1,12 +1,13 @@
 // TODO : MISSING
+// TILEMAP
 // TIMER
 // REMAINING DANGER COUNT
 // RESET
 
-import { start } from "./engine";
+import { start } from "../src/game/engine";
 
-import { Engine, Minesweeper } from "./types";
-import { shuffle } from "./utility";
+import { Engine, Minesweeper } from "../src/types";
+import { shuffle } from "../src/utility";
 
 const MENU_HEIGHT = 0;
 const CELL_SIZE = 40;
@@ -105,97 +106,6 @@ const restart = (state: Minesweeper.State) => {
   });
   return state;
 };
-
-const cells = Array.from({ length: ROWS * COLUMNS }).map(
-  (_, index): Minesweeper.Cell => {
-    const column = index % COLUMNS;
-    const row = Math.floor(index / COLUMNS);
-    return {
-      tag: "cell",
-      x: column * CELL_SIZE,
-      y: row * CELL_SIZE,
-      width: CELL_SIZE,
-      height: CELL_SIZE,
-      source: {
-        x: function (state) {
-          return (
-            getCellSource(state.cells[this.data.row]?.[this.data.column])
-              .column * 16
-          );
-        },
-        y: function (state) {
-          return (
-            getCellSource(state.cells[this.data.row]?.[this.data.column]).row *
-            16
-          );
-        },
-        width: 16,
-        height: 16,
-      },
-      image: "/public/minesweeper.png",
-      data: {
-        column,
-        row,
-      },
-      onClick(state) {
-        return onClick(this, state, false);
-      },
-      onContext(state) {
-        return onClick(this, state, true);
-      },
-    };
-  }
-);
-
-const winState: Engine.Drawable<Minesweeper.State> = {
-  x: 0,
-  y: 0,
-  width: WIDTH,
-  height: HEIGHT,
-  background: "rgba(0, 0, 0, .3)",
-  data: null,
-  visible: (state) => {
-    const winState = getWinState(state);
-    return winState !== "neutral";
-  },
-  children: [
-    {
-      x: WIDTH / 2,
-      y: HEIGHT / 2,
-      baseline: "middle",
-      align: "center",
-      data: null,
-      text: (state) => {
-        const winState = getWinState(state);
-        return winState === "win" ? "You win!" : "You lose!";
-      },
-      color: (state) => {
-        const winState = getWinState(state);
-        return winState === "win" ? "green" : "red";
-      },
-    },
-  ],
-};
-
-const engine = start<Minesweeper.State>({
-  width: WIDTH,
-  height: HEIGHT,
-  state: restart({
-    cells: Array.from({ length: ROWS }).map((_, row) =>
-      Array.from({ length: COLUMNS }).map((_, column) => ({
-        row,
-        column,
-        isRevealed: false,
-        isFlagged: false,
-        surroundingDangers: 0,
-        isDangerous: false,
-      }))
-    ),
-  }),
-  signals: [],
-  drawables: [...cells, winState],
-});
-
 const onClick = (
   cell: Minesweeper.Cell,
   state: Minesweeper.State,
@@ -241,3 +151,85 @@ const revealNeighbors = (
     }
   }
 };
+
+const cells = Array.from({ length: ROWS * COLUMNS }).map(
+  (_, index): Minesweeper.Cell => {
+    const column = index % COLUMNS;
+    const row = Math.floor(index / COLUMNS);
+    return {
+      x: column * CELL_SIZE,
+      y: row * CELL_SIZE,
+      width: CELL_SIZE,
+      height: CELL_SIZE,
+      source: {
+        x: function (state) {
+          return (
+            getCellSource(state.cells[this.data.row]?.[this.data.column])
+              .column * 16
+          );
+        },
+        y: function (state) {
+          return (
+            getCellSource(state.cells[this.data.row]?.[this.data.column]).row *
+            16
+          );
+        },
+        width: 16,
+        height: 16,
+      },
+      image: "/public/minesweeper.png",
+      data: {
+        column,
+        row,
+      },
+      onClick(state) {
+        return onClick(this, state, false);
+      },
+      onContext(state) {
+        return onClick(this, state, true);
+      },
+    };
+  }
+);
+
+const winState: Engine.Drawable<Minesweeper.State> = {
+  x: 0,
+  y: 0,
+  width: WIDTH,
+  height: HEIGHT,
+  background: "rgba(0, 0, 0, .3)",
+  baseline: "middle",
+  align: "center",
+  data: null,
+  visible: (state) => {
+    const winState = getWinState(state);
+    return winState !== "neutral";
+  },
+  text: (state) => {
+    const winState = getWinState(state);
+    return winState === "win" ? "You win!" : "You lose!";
+  },
+  color: (state) => {
+    const winState = getWinState(state);
+    return winState === "win" ? "green" : "red";
+  },
+};
+
+const engine = start<Minesweeper.State>({
+  width: WIDTH,
+  height: HEIGHT,
+  state: restart({
+    cells: Array.from({ length: ROWS }).map((_, row) =>
+      Array.from({ length: COLUMNS }).map((_, column) => ({
+        row,
+        column,
+        isRevealed: false,
+        isFlagged: false,
+        surroundingDangers: 0,
+        isDangerous: false,
+      }))
+    ),
+  }),
+  signals: [],
+  drawables: [...cells, winState],
+});
