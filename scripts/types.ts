@@ -1,0 +1,84 @@
+export type Unknown = any;
+
+export namespace Engine {
+  export type Value<T, State, Data> =
+    | T
+    | null
+    | undefined
+    | ((this: Drawable<State, Data>, state: State) => T);
+
+  export interface Drawable<State, Data = unknown> {
+    x: Value<number, State, Data>;
+    y: Value<number, State, Data>;
+    width?: Value<number, State, Data>;
+    height?: Value<number, State, Data>;
+    background?: Value<string, State, Data>;
+    text?: Value<string, State, Data>;
+    align?: Value<CanvasTextAlign, State, Data>;
+    baseline?: Value<CanvasTextBaseline, State, Data>;
+    color?: Value<string, State, Data>;
+    visible?: Value<boolean, State, Data>;
+    source?: {
+      x: Value<number, State, Data>;
+      y: Value<number, State, Data>;
+      width: Value<number, State, Data>;
+      height: Value<number, State, Data>;
+    };
+    image?: Value<string, State, Data>;
+    data: Data;
+    tag?: string;
+    onClick?: (this: Drawable<State, Data>, state: State) => State;
+    onContext?: (this: Drawable<State, Data>, state: State) => State;
+    children?: Array<Drawable<State, Unknown>>;
+  }
+
+  export interface ClickSignal {
+    name: "click";
+    x: number;
+    y: number;
+  }
+
+  export interface ContextSignal {
+    name: "context";
+    x: number;
+    y: number;
+  }
+
+  export type Signal = ClickSignal | ContextSignal;
+
+  export interface Config<State> {
+    drawables: Array<Drawable<State, Unknown>>;
+    width: number;
+    height: number;
+    state: State;
+    signals: Signal[];
+  }
+
+  export interface Instance {
+    play(src: string, volume?: number): void;
+  }
+}
+
+export namespace Minesweeper {
+  export interface CellData {
+    column: number;
+    row: number;
+  }
+
+  export interface CellState {
+    column: number;
+    row: number;
+    isRevealed: boolean;
+    isDangerous: boolean;
+    isFlagged: boolean;
+    surroundingDangers: number;
+  }
+
+  export interface State {
+    cells: CellState[][];
+  }
+
+  export type Cell = Engine.Drawable<State, CellData>;
+
+  export type WinState = "win" | "lose" | "neutral";
+}

@@ -2,6 +2,8 @@ import fs from "fs/promises";
 import path from "path";
 import { URL } from "url";
 
+import "../scripts/minesweeper";
+
 const port = process.env.PORT || 80;
 
 const html = `<!doctype html>
@@ -31,6 +33,15 @@ const extensions: Record<string, string> = {
   ".png": "image/png",
 };
 
+const cache: Record<string, string> = {};
+
+const useCache = async (key: string, callback: () => Promise<string>) => {
+  if (!(key in cache)) {
+    cache[key] = await callback();
+  }
+  return cache[key]!;
+};
+
 Bun.serve({
   async fetch(request) {
     const url = new URL(request.url);
@@ -47,14 +58,16 @@ Bun.serve({
     if (url.pathname.startsWith(SCRIPTS)) {
       const match = scriptsRouter.match(url.pathname.slice(SCRIPTS.length - 1));
       if (match) {
-        const output = await Bun.build({
-          entrypoints: [match.filePath],
+        const body = await useCache(`script:${match.filePath}`, async () => {
+          const output = await Bun.build({
+            entrypoints: [match.filePath],
+          });
+          const body = await Promise.all(
+            output.outputs.map((output) => output.text())
+          );
+          return body.join("");
         });
-        console.log(output);
-        const body = await Promise.all(
-          output.outputs.map((output) => output.text())
-        );
-        return new Response(body.join(""), {
+        return new Response(body, {
           headers: {
             "Content-Type": "text/javascript",
           },
