@@ -60,11 +60,11 @@ const loadAudio = (src: string) => {
   return audioCache[src]!;
 };
 
-const getValue = <T, State, Data>(
+export const getValue = <T, State, Data>(
   value: Engine.Value<T, State, Data>,
   state: State,
   drawable: Engine.Drawable<State, Data>
-) => {
+): T | null | undefined => {
   if (typeof value === "function") {
     return (value as Unknown).call(drawable, state);
   }
@@ -98,14 +98,15 @@ const draw = <State>(
     const visible = getValue(drawable.visible, state, drawable) ?? true;
     if (visible) {
       const image = loadImage(drawable.image, state, drawable);
-      const dx = getValue(drawable.x, state, drawable),
-        dy = getValue(drawable.y, state, drawable),
+      const dx = getValue(drawable.x, state, drawable) ?? 0,
+        dy = getValue(drawable.y, state, drawable) ?? 0,
         dw = getValue(drawable.width, state, drawable) ?? 0,
-        dh = getValue(drawable.height, state, drawable) ?? 0,
-        sx = getValue(drawable.source?.x, state, drawable) ?? 0,
-        sy = getValue(drawable.source?.y, state, drawable) ?? 0,
-        sw = getValue(drawable.source?.width, state, drawable) ?? dw,
-        sh = getValue(drawable.source?.height, state, drawable) ?? dh;
+        dh = getValue(drawable.height, state, drawable) ?? 0;
+      const source = getValue(drawable.source, state, drawable);
+      const sx = getValue(source?.x, state, drawable) ?? 0,
+        sy = getValue(source?.y, state, drawable) ?? 0,
+        sw = getValue(source?.width, state, drawable) ?? dw,
+        sh = getValue(source?.height, state, drawable) ?? dh;
       signals.forEach((signal) => {
         if (signal.name === "click") {
           if (
@@ -140,11 +141,11 @@ const draw = <State>(
       }
       const text = getValue(drawable.text, state, drawable);
       if (text) {
-        context.textAlign = getValue(drawable.align, state, drawable) || "left";
+        context.textAlign = getValue(drawable.align, state, drawable) ?? "left";
         context.textBaseline =
-          getValue(drawable.baseline, state, drawable) || "top";
+          getValue(drawable.baseline, state, drawable) ?? "top";
         context.font = `24px sans-sarif`;
-        context.fillStyle = getValue(drawable.color, state, drawable);
+        context.fillStyle = getValue(drawable.color, state, drawable) ?? "";
         context.fillText(text, dx + dw / 2, dy + dh / 2);
       }
       state = draw(drawable.children ?? [], context, state, signals);

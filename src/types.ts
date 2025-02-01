@@ -7,6 +7,25 @@ export namespace Engine {
     | undefined
     | ((this: Drawable<State, Data>, state: State) => T);
 
+  export type TilemapConfig<State> = {
+    rows: number;
+    columns: number;
+    onClick(): State;
+    onContext(): State;
+  };
+
+  export interface Source {
+    width: number;
+    height: number;
+    row: number;
+    column: number;
+  }
+
+  export interface SpritesheetConfig<State, Data>
+    extends Drawable<State, Data> {
+    spritesheet: Value<Source, State, Data>;
+  }
+
   export interface Drawable<State, Data = unknown> {
     x: Value<number, State, Data>;
     y: Value<number, State, Data>;
@@ -18,12 +37,16 @@ export namespace Engine {
     baseline?: Value<CanvasTextBaseline, State, Data>;
     color?: Value<string, State, Data>;
     visible?: Value<boolean, State, Data>;
-    source?: {
-      x: Value<number, State, Data>;
-      y: Value<number, State, Data>;
-      width: Value<number, State, Data>;
-      height: Value<number, State, Data>;
-    };
+    source?: Value<
+      {
+        x: Value<number, State, Data>;
+        y: Value<number, State, Data>;
+        width: Value<number, State, Data>;
+        height: Value<number, State, Data>;
+      },
+      State,
+      Data
+    >;
     image?: Value<string, State, Data>;
     data: Data;
     onClick?: (this: Drawable<State, Data>, state: State) => State;

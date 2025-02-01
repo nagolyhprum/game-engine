@@ -5,6 +5,7 @@
 // RESET
 
 import { start } from "../src/game/engine";
+import { spritesheet } from "../src/game/spritesheet";
 
 import { Engine, Minesweeper } from "../src/types";
 import { shuffle } from "../src/utility";
@@ -106,6 +107,7 @@ const restart = (state: Minesweeper.State) => {
   });
   return state;
 };
+
 const onClick = (
   cell: Minesweeper.Cell,
   state: Minesweeper.State,
@@ -156,27 +158,22 @@ const cells = Array.from({ length: ROWS * COLUMNS }).map(
   (_, index): Minesweeper.Cell => {
     const column = index % COLUMNS;
     const row = Math.floor(index / COLUMNS);
-    return {
+    return spritesheet({
+      spritesheet(state) {
+        const source = getCellSource(
+          state.cells[this.data.row]?.[this.data.column]
+        );
+        return {
+          column: source.column,
+          row: source.row,
+          width: 16,
+          height: 16,
+        };
+      },
       x: column * CELL_SIZE,
       y: row * CELL_SIZE,
       width: CELL_SIZE,
       height: CELL_SIZE,
-      source: {
-        x: function (state) {
-          return (
-            getCellSource(state.cells[this.data.row]?.[this.data.column])
-              .column * 16
-          );
-        },
-        y: function (state) {
-          return (
-            getCellSource(state.cells[this.data.row]?.[this.data.column]).row *
-            16
-          );
-        },
-        width: 16,
-        height: 16,
-      },
       image: "/public/minesweeper.png",
       data: {
         column,
@@ -188,7 +185,7 @@ const cells = Array.from({ length: ROWS * COLUMNS }).map(
       onContext(state) {
         return onClick(this, state, true);
       },
-    };
+    });
   }
 );
 
@@ -233,3 +230,5 @@ const engine = start<Minesweeper.State>({
   signals: [],
   drawables: [...cells, winState],
 });
+
+// 238
