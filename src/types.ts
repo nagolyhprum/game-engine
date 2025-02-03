@@ -3,6 +3,14 @@ export type Unknown = any;
 export namespace Engine {
   export interface GlobalState {
     now: number;
+    mouse: {
+      leftIsDown: boolean;
+      rightIsDown: boolean;
+      location: {
+        x: number;
+        y: number;
+      };
+    };
   }
 
   export type Value<T, State extends GlobalState, Data> =

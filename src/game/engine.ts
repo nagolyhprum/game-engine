@@ -9,6 +9,19 @@ export const start = <State extends Engine.GlobalState>(
     context.imageSmoothingEnabled = false;
     canvas.width = renderable.width;
     canvas.height = renderable.height;
+    // TODO : MAKE THESE EVENTS BETTER
+    canvas.onmousedown = () => {
+      renderable.state.mouse.leftIsDown = true;
+    };
+    canvas.onmouseup = () => {
+      renderable.state.mouse.leftIsDown = false;
+    };
+    canvas.onmouseleave = () => {
+      renderable.state.mouse.leftIsDown = false;
+    };
+    canvas.onmouseout = () => {
+      renderable.state.mouse.leftIsDown = false;
+    };
     canvas.onclick = (event) => {
       event.preventDefault();
       renderable.signals.push({
@@ -181,4 +194,16 @@ export const drawable = <State extends Engine.GlobalState, Data = Unknown>(
     return draw(this, context, state, signals);
   },
   ...config,
+});
+
+export const defaultState = (): Engine.GlobalState => ({
+  mouse: {
+    leftIsDown: false,
+    rightIsDown: false,
+    location: {
+      x: -1,
+      y: -1,
+    },
+  },
+  now: Date.now(),
 });

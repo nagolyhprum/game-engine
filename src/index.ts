@@ -10,6 +10,9 @@ const html = `<!doctype html>
 <html>
     <head>
       <style>
+        body {
+          padding : 50px;
+        }
         canvas {
           background : black;
         }

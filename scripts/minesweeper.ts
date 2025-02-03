@@ -1,7 +1,8 @@
 // TODO : MISSING
 // TILEMAP
+// MOUSE DOWN
 
-import { start, drawable } from "../src/game/engine";
+import { start, drawable, defaultState } from "../src/game/engine";
 import { ninePatch } from "../src/game/nine-patch";
 import { spritesheet } from "../src/game/spritesheet";
 
@@ -271,6 +272,9 @@ const menu = drawable<Minesweeper.State>({
         if (winState === "lose") {
           return "😵";
         }
+        if (state.mouse.leftIsDown) {
+          return "😮";
+        }
         return "🙂";
       },
       onClick(state) {
@@ -304,7 +308,7 @@ const engine = start<Minesweeper.State>({
   width: WIDTH,
   height: HEIGHT,
   state: restart({
-    now: Date.now(),
+    ...defaultState(),
     lastRevealedAt: 0,
     startedAt: 0,
     cells: Array.from({ length: ROWS }).map((_, row) =>
