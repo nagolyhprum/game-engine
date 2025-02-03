@@ -39,7 +39,7 @@ const useCache = async (key: string, callback: () => Promise<string>) => {
   if (!(key in cache)) {
     cache[key] = await callback();
   }
-  return cache[key]!;
+  return cache[key] ?? "";
 };
 
 Bun.serve({

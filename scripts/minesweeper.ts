@@ -4,19 +4,22 @@
 // REMAINING DANGER COUNT
 // RESET
 
-import { start } from "../src/game/engine";
+import { start, drawable } from "../src/game/engine";
+import { ninePatch } from "../src/game/nine-patch";
 import { spritesheet } from "../src/game/spritesheet";
 
-import { Engine, Minesweeper } from "../src/types";
+import { Minesweeper } from "../src/types";
 import { shuffle } from "../src/utility";
 
-const MENU_HEIGHT = 0;
+const MENU_HEIGHT = 50;
 const CELL_SIZE = 40;
 const ROWS = 10;
 const COLUMNS = 15;
 const WIDTH = CELL_SIZE * COLUMNS;
 const HEIGHT = MENU_HEIGHT + CELL_SIZE * ROWS;
 const DANGERS = Math.ceil(ROWS * COLUMNS * 0.1);
+const SOURCE_EDGE = 3;
+const DESTINATION_EDGE = (CELL_SIZE / 16) * SOURCE_EDGE;
 
 const getWinState = (state: Minesweeper.State): Minesweeper.WinState => {
   const cells = state.cells.flat();
@@ -171,7 +174,7 @@ const cells = Array.from({ length: ROWS * COLUMNS }).map(
         };
       },
       x: column * CELL_SIZE,
-      y: row * CELL_SIZE,
+      y: row * CELL_SIZE + MENU_HEIGHT,
       width: CELL_SIZE,
       height: CELL_SIZE,
       image: "/public/minesweeper.png",
@@ -189,7 +192,37 @@ const cells = Array.from({ length: ROWS * COLUMNS }).map(
   }
 );
 
-const winState: Engine.Drawable<Minesweeper.State> = {
+const menu = ninePatch<Minesweeper.State>({
+  x: 0,
+  y: 0,
+  width: WIDTH,
+  height: MENU_HEIGHT,
+  ninePatch: {
+    sourceEdge: SOURCE_EDGE,
+    destinationEdge: DESTINATION_EDGE,
+    width: 16,
+    height: 16,
+  },
+  children: [
+    spritesheet({
+      x: 0,
+      y: 0,
+      width: 16,
+      height: 16,
+      spritesheet: {
+        column: 0,
+        row: 2,
+        width: 16,
+        height: 16,
+      },
+      image: "/public/minesweeper.png",
+      data: null,
+    }),
+  ],
+  data: null,
+});
+
+const winState = drawable<Minesweeper.State>({
   x: 0,
   y: 0,
   width: WIDTH,
@@ -210,7 +243,7 @@ const winState: Engine.Drawable<Minesweeper.State> = {
     const winState = getWinState(state);
     return winState === "win" ? "green" : "red";
   },
-};
+});
 
 const engine = start<Minesweeper.State>({
   width: WIDTH,
@@ -228,7 +261,7 @@ const engine = start<Minesweeper.State>({
     ),
   }),
   signals: [],
-  drawables: [...cells, winState],
+  drawables: [menu, ...cells, winState],
 });
 
 // 238

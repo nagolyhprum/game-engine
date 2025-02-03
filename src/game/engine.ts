@@ -41,7 +41,7 @@ const render = <State>(
   context: CanvasRenderingContext2D
 ) => {
   requestAnimationFrame(() => render(renderable, context));
-  renderable.state = draw(
+  renderable.state = drawAll(
     renderable.drawables as Engine.Drawable<State, unknown>[],
     context,
     renderable.state,
@@ -88,68 +88,95 @@ const loadImage = <State, Data>(
   return imageCache[src];
 };
 
-const draw = <State>(
-  drawables: Array<Engine.Drawable<State, unknown>>,
+const drawAll = <State, Data>(
+  drawables: Array<Engine.Drawable<State, Data>>,
   context: CanvasRenderingContext2D,
   state: State,
   signals: Engine.Signal[]
 ): State => {
   drawables.forEach((drawable) => {
-    const visible = getValue(drawable.visible, state, drawable) ?? true;
-    if (visible) {
-      const image = loadImage(drawable.image, state, drawable);
-      const dx = getValue(drawable.x, state, drawable) ?? 0,
-        dy = getValue(drawable.y, state, drawable) ?? 0,
-        dw = getValue(drawable.width, state, drawable) ?? 0,
-        dh = getValue(drawable.height, state, drawable) ?? 0;
-      const source = getValue(drawable.source, state, drawable);
-      const sx = getValue(source?.x, state, drawable) ?? 0,
-        sy = getValue(source?.y, state, drawable) ?? 0,
-        sw = getValue(source?.width, state, drawable) ?? dw,
-        sh = getValue(source?.height, state, drawable) ?? dh;
-      signals.forEach((signal) => {
-        if (signal.name === "click") {
-          if (
-            drawable.onClick &&
-            signal.x >= dx &&
-            signal.x < dx + dw &&
-            signal.y >= dy &&
-            signal.y < dy + dh
-          ) {
-            state = drawable.onClick(state);
-          }
-        }
-        if (signal.name === "context") {
-          if (
-            drawable.onContext &&
-            signal.x >= dx &&
-            signal.x < dx + dw &&
-            signal.y >= dy &&
-            signal.y < dy + dh
-          ) {
-            state = drawable.onContext(state);
-          }
-        }
-      });
-      if (image?.complete) {
-        context.drawImage(image, sx, sy, sw, sh, dx, dy, dw, dh);
-      }
-      const background = getValue(drawable.background, state, drawable);
-      if (background) {
-        context.fillStyle = background;
-        context.fillRect(dx, dy, dw, dh);
-      }
-      const text = getValue(drawable.text, state, drawable);
-      if (text) {
-        context.textAlign = getValue(drawable.align, state, drawable) ?? "left";
-        context.textBaseline =
-          getValue(drawable.baseline, state, drawable) ?? "top";
-        context.font = `24px sans-sarif`;
-        context.fillStyle = getValue(drawable.color, state, drawable) ?? "";
-        context.fillText(text, dx + dw / 2, dy + dh / 2);
-      }
-      state = draw(drawable.children ?? [], context, state, signals);
+    const draw = drawable.draw;
+    if (draw) {
+      state = draw.call(drawable, context, state, signals);
     }
   });
   return state;
 };
+
+export const draw = <State, Data>(
+  drawable: Engine.Drawable<State, Data>,
+  context: CanvasRenderingContext2D,
+  state: State,
+  signals: Engine.Signal[]
+) => {
+  const visible = getValue(drawable.visible, state, drawable) ?? true;
+  if (visible) {
+    const image = loadImage(drawable.image, state, drawable);
+    const dx = getValue(drawable.x, state, drawable) ?? 0,
+      dy = getValue(drawable.y, state, drawable) ?? 0,
+      dw = getValue(drawable.width, state, drawable) ?? 0,
+      dh = getValue(drawable.height, state, drawable) ?? 0;
+    context.rect(dx, dy, dw, dh);
+    const source = getValue(drawable.source, state, drawable);
+    const sx = getValue(source?.x, state, drawable) ?? 0,
+      sy = getValue(source?.y, state, drawable) ?? 0,
+      sw = getValue(source?.width, state, drawable) ?? dw,
+      sh = getValue(source?.height, state, drawable) ?? dh;
+    signals.forEach((signal) => {
+      if (signal.name === "click") {
+        if (
+          drawable.onClick &&
+          signal.x >= dx &&
+          signal.x < dx + dw &&
+          signal.y >= dy &&
+          signal.y < dy + dh
+        ) {
+          state = drawable.onClick(state);
+        }
+      }
+      if (signal.name === "context") {
+        if (
+          drawable.onContext &&
+          signal.x >= dx &&
+          signal.x < dx + dw &&
+          signal.y >= dy &&
+          signal.y < dy + dh
+        ) {
+          state = drawable.onContext(state);
+        }
+      }
+    });
+    if (image?.complete) {
+      context.drawImage(image, sx, sy, sw, sh, dx, dy, dw, dh);
+    }
+    const background = getValue(drawable.background, state, drawable);
+    if (background) {
+      context.fillStyle = background;
+      context.fillRect(dx, dy, dw, dh);
+    }
+    const text = getValue(drawable.text, state, drawable);
+    if (text) {
+      context.textAlign = getValue(drawable.align, state, drawable) ?? "left";
+      context.textBaseline =
+        getValue(drawable.baseline, state, drawable) ?? "top";
+      context.font = `24px sans-sarif`;
+      context.fillStyle = getValue(drawable.color, state, drawable) ?? "";
+      context.fillText(text, dx + dw / 2, dy + dh / 2);
+    }
+    state = drawAll(drawable.children ?? [], context, state, signals);
+  }
+  return state;
+};
+
+export const drawable = <State, Data = Unknown>(
+  config: Engine.Drawable<State, Data>
+): Engine.Drawable<State, Data> => ({
+  draw(
+    context: CanvasRenderingContext2D,
+    state: State,
+    signals: Engine.Signal[]
+  ) {
+    return draw(this, context, state, signals);
+  },
+  ...config,
+});

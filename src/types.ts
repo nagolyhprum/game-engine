@@ -14,7 +14,18 @@ export namespace Engine {
     onContext(): State;
   };
 
-  export interface Source {
+  export interface NinePatchSource {
+    width: number;
+    height: number;
+    sourceEdge: number;
+    destinationEdge: number;
+  }
+
+  export interface NinePatchConfig<State, Data> extends Drawable<State, Data> {
+    ninePatch: Value<NinePatchSource, State, Data>;
+  }
+
+  export interface SpritesheetSource {
     width: number;
     height: number;
     row: number;
@@ -23,7 +34,7 @@ export namespace Engine {
 
   export interface SpritesheetConfig<State, Data>
     extends Drawable<State, Data> {
-    spritesheet: Value<Source, State, Data>;
+    spritesheet: Value<SpritesheetSource, State, Data>;
   }
 
   export interface Drawable<State, Data = unknown> {
@@ -52,6 +63,12 @@ export namespace Engine {
     onClick?: (this: Drawable<State, Data>, state: State) => State;
     onContext?: (this: Drawable<State, Data>, state: State) => State;
     children?: Array<Drawable<State, Unknown>>;
+    draw?: (
+      this: Drawable<State, Data>,
+      context: CanvasRenderingContext2D,
+      state: State,
+      signals: Engine.Signal[]
+    ) => State;
   }
 
   export interface ClickSignal {

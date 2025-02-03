@@ -1,10 +1,10 @@
 import { Engine } from "../types";
-import { getValue } from "./engine";
+import { drawable, getValue } from "./engine";
 
-export const spritesheet = <State, Data>(
+export const spritesheet = <State, Data = unknown>(
   config: Engine.SpritesheetConfig<State, Data>
 ): Engine.Drawable<State, Data> => {
-  return {
+  return drawable<State, Data>({
     ...config,
     source(state) {
       const spritesheet = getValue(config.spritesheet, state, this);
@@ -22,5 +22,5 @@ export const spritesheet = <State, Data>(
             height: 0,
           };
     },
-  };
+  });
 };
