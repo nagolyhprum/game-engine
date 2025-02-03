@@ -1,12 +1,10 @@
 import { Engine } from "../types";
-import { getNumber } from "../utility";
 import { draw, drawable, getValue } from "./engine";
 
 const getCanvas = () => {
   if (typeof document !== "undefined") {
     const canvas = document.createElement("canvas");
     const context = canvas.getContext("2d");
-    document.body.appendChild(canvas);
     return {
       canvas,
       context,
