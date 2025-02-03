@@ -119,8 +119,9 @@ const onClick = (
   isRightClick = false
 ) => {
   const winState = getWinState(state);
-  if (winState === "neutral") {
-    const data = state.cells[cell.data.row]?.[cell.data.column];
+  const cellData = cell.data;
+  if (cellData && winState === "neutral") {
+    const data = state.cells[cellData.row]?.[cellData.column];
     if (data) {
       if (isRightClick) {
         data.isFlagged = true;
@@ -129,7 +130,7 @@ const onClick = (
           if (data.isDangerous) {
             engine.play("/public/explosion.wav", 0.25);
           }
-          revealNeighbors(state, cell.data.row, cell.data.column);
+          revealNeighbors(state, cellData.row, cellData.column);
         }
       }
     }
@@ -165,9 +166,8 @@ const cells = Array.from({ length: ROWS * COLUMNS }).map(
     const row = Math.floor(index / COLUMNS);
     return spritesheet({
       spritesheet(state) {
-        const source = getCellSource(
-          state.cells[this.data.row]?.[this.data.column]
-        );
+        const { row = -1, column = -1 } = this.data || {};
+        const source = getCellSource(state.cells[row]?.[column]);
         return {
           column: source.column,
           row: source.row,
@@ -275,13 +275,15 @@ const menu = drawable<Minesweeper.State>({
           height: 64,
           spritesheet: {
             column: 0,
-            row: (state) => {
+            row(state) {
               if (state.mouse.leftIsDown) {
                 const { x, y } = state.mouse.location;
-                const left = WIDTH / 2 - 20;
-                const top = MENU_HEIGHT / 2 - 20;
-                const right = left + 40;
-                const bottom = top + 40;
+                const {
+                  top = 0,
+                  right = 0,
+                  bottom = 0,
+                  left = 0,
+                } = this.parent?.bounds ?? {};
                 if (x >= left && x < right && y >= top && y < bottom) {
                   return 1;
                 }

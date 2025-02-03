@@ -74,16 +74,25 @@ export namespace Engine {
       Data
     >;
     image?: Value<string, State, Data>;
-    data: Data;
+    data?: Data;
     onClick?: (this: Drawable<State, Data>, state: State) => State;
     onContext?: (this: Drawable<State, Data>, state: State) => State;
     children?: Array<Drawable<State, Unknown>>;
+    bounds?: Bounds;
     draw?: (
       this: Drawable<State, Data>,
       context: CanvasRenderingContext2D,
       state: State,
       signals: Engine.Signal[]
     ) => State;
+    parent?: Drawable<State, Unknown>;
+  }
+
+  export interface Bounds {
+    top: number;
+    right: number;
+    bottom: number;
+    left: number;
   }
 
   export interface ClickSignal {
