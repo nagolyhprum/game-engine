@@ -2,7 +2,6 @@
 // TILEMAP
 // TIMER
 // REMAINING DANGER COUNT
-// RESET
 
 import { start, drawable } from "../src/game/engine";
 import { ninePatch } from "../src/game/nine-patch";
@@ -17,7 +16,7 @@ const ROWS = 10;
 const COLUMNS = 15;
 const WIDTH = CELL_SIZE * COLUMNS;
 const HEIGHT = MENU_HEIGHT + CELL_SIZE * ROWS;
-const DANGERS = Math.ceil(ROWS * COLUMNS * 0.1);
+const DANGERS = Math.ceil(ROWS * COLUMNS * 0.05);
 const SOURCE_EDGE = 3;
 const DESTINATION_EDGE = (CELL_SIZE / 16) * SOURCE_EDGE;
 
@@ -117,9 +116,7 @@ const onClick = (
   isRightClick = false
 ) => {
   const winState = getWinState(state);
-  if (winState !== "neutral") {
-    restart(state);
-  } else {
+  if (winState === "neutral") {
     const data = state.cells[cell.data.row]?.[cell.data.column];
     if (data) {
       if (isRightClick) {
@@ -192,34 +189,86 @@ const cells = Array.from({ length: ROWS * COLUMNS }).map(
   }
 );
 
-const menu = ninePatch<Minesweeper.State>({
+const menu = drawable<Minesweeper.State>({
   x: 0,
   y: 0,
   width: WIDTH,
   height: MENU_HEIGHT,
-  ninePatch: {
-    sourceEdge: SOURCE_EDGE,
-    destinationEdge: DESTINATION_EDGE,
-    width: 16,
-    height: 16,
-  },
+  data: null,
   children: [
-    spritesheet({
+    ninePatch({
       x: 0,
       y: 0,
-      width: 16,
-      height: 16,
-      spritesheet: {
-        column: 0,
-        row: 2,
+      width: WIDTH,
+      height: MENU_HEIGHT,
+      ninePatch: {
+        sourceEdge: SOURCE_EDGE,
+        destinationEdge: DESTINATION_EDGE,
         width: 16,
         height: 16,
       },
-      image: "/public/minesweeper.png",
+      children: [
+        spritesheet({
+          x: 0,
+          y: 0,
+          width: 16,
+          height: 16,
+          spritesheet: {
+            column: 0,
+            row: 2,
+            width: 16,
+            height: 16,
+          },
+          image: "/public/minesweeper.png",
+          data: null,
+        }),
+      ],
+      data: null,
+    }),
+    drawable({
+      x: 25,
+      y: MENU_HEIGHT / 2,
+      baseline: "middle",
+      align: "left",
+      text: "00:00",
+      color: "red",
+      font: `${MENU_HEIGHT / 2}px Courier New`,
+      data: null,
+    }),
+    drawable({
+      x: WIDTH / 2 - 25,
+      y: MENU_HEIGHT / 2 - 25,
+      width: 50,
+      height: 50,
+      baseline: "middle",
+      align: "center",
+      font: `${MENU_HEIGHT / 2}px Courier New`,
+      text: (state) => {
+        const winState = getWinState(state);
+        if (winState === "win") {
+          return "😎";
+        }
+        if (winState === "lose") {
+          return "😵";
+        }
+        return "🙂";
+      },
+      onClick(state) {
+        return restart(state);
+      },
+      data: null,
+    }),
+    drawable({
+      x: WIDTH - 25,
+      y: MENU_HEIGHT / 2,
+      baseline: "middle",
+      align: "right",
+      text: "99",
+      color: "red",
+      font: `${MENU_HEIGHT / 2}px Courier New`,
       data: null,
     }),
   ],
-  data: null,
 });
 
 const winState = drawable<Minesweeper.State>({

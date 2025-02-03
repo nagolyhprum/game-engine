@@ -48,6 +48,7 @@ export namespace Engine {
     baseline?: Value<CanvasTextBaseline, State, Data>;
     color?: Value<string, State, Data>;
     visible?: Value<boolean, State, Data>;
+    font?: Value<string, State, Data>;
     source?: Value<
       {
         x: Value<number, State, Data>;

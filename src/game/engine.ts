@@ -159,7 +159,8 @@ export const draw = <State, Data>(
       context.textAlign = getValue(drawable.align, state, drawable) ?? "left";
       context.textBaseline =
         getValue(drawable.baseline, state, drawable) ?? "top";
-      context.font = `24px sans-sarif`;
+      context.font =
+        getValue(drawable.font, state, drawable) ?? `24px sans-sarif`;
       context.fillStyle = getValue(drawable.color, state, drawable) ?? "";
       context.fillText(text, dx + dw / 2, dy + dh / 2);
     }
