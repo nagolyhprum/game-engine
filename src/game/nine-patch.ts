@@ -5,6 +5,7 @@ const getCanvas = () => {
   if (typeof document !== "undefined") {
     const canvas = document.createElement("canvas");
     const context = canvas.getContext("2d");
+    // document.body.appendChild(canvas);
     return {
       canvas,
       context,
@@ -25,10 +26,11 @@ export const ninePatch = <State extends Engine.GlobalState, Data = unknown>(
     draw(context, state, signals) {
       if (backCanvas && backContext) {
         const ninePatch = getValue(config.ninePatch, state, this);
-        const sourceEdge = ninePatch?.sourceEdge ?? 0;
-        const destinationEdge = ninePatch?.destinationEdge ?? 0;
-        backCanvas.width = ninePatch?.width ?? 0;
-        backCanvas.height = ninePatch?.height ?? 0;
+        const sourceEdge = getValue(ninePatch?.sourceEdge, state, this) ?? 0;
+        const destinationEdge =
+          getValue(ninePatch?.destinationEdge, state, this) ?? 0;
+        backCanvas.width = getValue(ninePatch?.width, state, this) ?? 0;
+        backCanvas.height = getValue(ninePatch?.height, state, this) ?? 0;
         const x = getValue(this.x, state, this) ?? 0,
           y = getValue(this.y, state, this) ?? 0,
           width = getValue(this.width, state, this) ?? 0,

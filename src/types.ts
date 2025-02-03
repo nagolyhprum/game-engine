@@ -26,31 +26,32 @@ export namespace Engine {
     onContext(): State;
   };
 
-  export interface NinePatchSource {
-    width: number;
-    height: number;
-    sourceEdge: number;
-    destinationEdge: number;
+  export interface NinePatchSource<State extends GlobalState, Data> {
+    width: Value<number, State, Data>;
+    height: Value<number, State, Data>;
+    sourceEdge: Value<number, State, Data>;
+    destinationEdge: Value<number, State, Data>;
   }
 
   export interface NinePatchConfig<State extends GlobalState, Data>
     extends Drawable<State, Data> {
-    ninePatch: Value<NinePatchSource, State, Data>;
+    ninePatch: Value<NinePatchSource<State, Data>, State, Data>;
   }
 
-  export interface SpritesheetSource {
-    width: number;
-    height: number;
-    row: number;
-    column: number;
+  export interface SpritesheetSource<State extends GlobalState, Data> {
+    width: Value<number, State, Data>;
+    height: Value<number, State, Data>;
+    row: Value<number, State, Data>;
+    column: Value<number, State, Data>;
   }
 
   export interface SpritesheetConfig<State extends GlobalState, Data>
     extends Drawable<State, Data> {
-    spritesheet: Value<SpritesheetSource, State, Data>;
+    spritesheet: Value<SpritesheetSource<State, Data>, State, Data>;
   }
 
   export interface Drawable<State extends GlobalState, Data = unknown> {
+    debug?: boolean;
     x: Value<number, State, Data>;
     y: Value<number, State, Data>;
     width?: Value<number, State, Data>;

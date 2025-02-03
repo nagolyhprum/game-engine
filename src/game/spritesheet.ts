@@ -8,12 +8,16 @@ export const spritesheet = <State extends Engine.GlobalState, Data = unknown>(
     ...config,
     source(state) {
       const spritesheet = getValue(config.spritesheet, state, this);
+      const width = getValue(spritesheet?.width, state, this) ?? 0;
+      const height = getValue(spritesheet?.height, state, this) ?? 0;
+      const column = getValue(spritesheet?.column, state, this) ?? 0;
+      const row = getValue(spritesheet?.row, state, this) ?? 0;
       return spritesheet
         ? {
-            x: spritesheet.column * spritesheet.width,
-            y: spritesheet.row * spritesheet.height,
-            width: spritesheet.width,
-            height: spritesheet.height,
+            x: column * width,
+            y: row * height,
+            width,
+            height,
           }
         : {
             x: 0,

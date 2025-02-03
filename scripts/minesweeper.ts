@@ -1,6 +1,6 @@
 // TODO : MISSING
 // TILEMAP
-// MOUSE DOWN
+// MAKE STATE IMMUTABLE
 
 import { start, drawable, defaultState } from "../src/game/engine";
 import { ninePatch } from "../src/game/nine-patch";
@@ -256,6 +256,47 @@ const menu = drawable<Minesweeper.State>({
       background: "black",
       data: null,
     }),
+    ninePatch({
+      x: WIDTH / 2 - 20,
+      y: MENU_HEIGHT / 2 - 20,
+      width: 40,
+      height: 40,
+      ninePatch: {
+        sourceEdge: 15,
+        destinationEdge: 15,
+        width: 256,
+        height: 64,
+      },
+      children: [
+        spritesheet({
+          x: 0,
+          y: 0,
+          width: 256,
+          height: 64,
+          spritesheet: {
+            column: 0,
+            row: (state) => {
+              if (state.mouse.leftIsDown) {
+                const { x, y } = state.mouse.location;
+                const left = WIDTH / 2 - 20;
+                const top = MENU_HEIGHT / 2 - 20;
+                const right = left + 40;
+                const bottom = top + 40;
+                if (x >= left && x < right && y >= top && y < bottom) {
+                  return 1;
+                }
+              }
+              return 0;
+            },
+            width: 256,
+            height: 64,
+          },
+          image: "/public/buttons.png",
+          data: null,
+        }),
+      ],
+      data: null,
+    }),
     drawable({
       x: WIDTH / 2 - 25,
       y: MENU_HEIGHT / 2 - 25,
@@ -263,7 +304,7 @@ const menu = drawable<Minesweeper.State>({
       height: 50,
       baseline: "middle",
       align: "center",
-      font: `${MENU_HEIGHT / 2}px Courier New`,
+      font: `${MENU_HEIGHT / 4}px Courier New`,
       text: (state) => {
         const winState = getWinState(state);
         if (winState === "win") {

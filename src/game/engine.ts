@@ -10,6 +10,10 @@ export const start = <State extends Engine.GlobalState>(
     canvas.width = renderable.width;
     canvas.height = renderable.height;
     // TODO : MAKE THESE EVENTS BETTER
+    canvas.onmousemove = (event) => {
+      renderable.state.mouse.location.x = event.offsetX;
+      renderable.state.mouse.location.y = event.offsetY;
+    };
     canvas.onmousedown = () => {
       renderable.state.mouse.leftIsDown = true;
     };
@@ -123,6 +127,9 @@ export const draw = <State extends Engine.GlobalState, Data>(
   state: State,
   signals: Engine.Signal[]
 ) => {
+  if (drawable.debug) {
+    debugger;
+  }
   const visible = getValue(drawable.visible, state, drawable) ?? true;
   if (visible) {
     const image = loadImage(drawable.image, state, drawable);
@@ -130,7 +137,6 @@ export const draw = <State extends Engine.GlobalState, Data>(
       dy = getValue(drawable.y, state, drawable) ?? 0,
       dw = getValue(drawable.width, state, drawable) ?? 0,
       dh = getValue(drawable.height, state, drawable) ?? 0;
-    context.rect(dx, dy, dw, dh);
     const source = getValue(drawable.source, state, drawable);
     const sx = getValue(source?.x, state, drawable) ?? 0,
       sy = getValue(source?.y, state, drawable) ?? 0,
