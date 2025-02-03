@@ -124,7 +124,7 @@ const onClick = (
     const data = state.cells[cellData.row]?.[cellData.column];
     if (data) {
       if (isRightClick) {
-        data.isFlagged = true;
+        data.isFlagged = !data.isFlagged;
       } else {
         if (!data.isRevealed && !data.isFlagged) {
           if (data.isDangerous) {
