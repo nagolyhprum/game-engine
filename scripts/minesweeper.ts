@@ -263,7 +263,13 @@ const menu = drawable<Minesweeper.State>({
       y: MENU_HEIGHT / 2,
       baseline: "middle",
       align: "right",
-      text: "99",
+      text: (state) => {
+        const dangers = Math.max(
+          0,
+          DANGERS - state.cells.flat().filter((cell) => cell.isFlagged).length
+        );
+        return dangers.toString().padStart(2, "0");
+      },
       color: "red",
       font: `${MENU_HEIGHT / 2}px Courier New`,
       data: null,
