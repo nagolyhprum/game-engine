@@ -1,13 +1,17 @@
 export type Unknown = any;
 
 export namespace Engine {
-  export type Value<T, State, Data> =
+  export interface GlobalState {
+    now: number;
+  }
+
+  export type Value<T, State extends GlobalState, Data> =
     | T
     | null
     | undefined
     | ((this: Drawable<State, Data>, state: State) => T);
 
-  export type TilemapConfig<State> = {
+  export type TilemapConfig<State extends GlobalState> = {
     rows: number;
     columns: number;
     onClick(): State;
@@ -21,7 +25,8 @@ export namespace Engine {
     destinationEdge: number;
   }
 
-  export interface NinePatchConfig<State, Data> extends Drawable<State, Data> {
+  export interface NinePatchConfig<State extends GlobalState, Data>
+    extends Drawable<State, Data> {
     ninePatch: Value<NinePatchSource, State, Data>;
   }
 
@@ -32,12 +37,12 @@ export namespace Engine {
     column: number;
   }
 
-  export interface SpritesheetConfig<State, Data>
+  export interface SpritesheetConfig<State extends GlobalState, Data>
     extends Drawable<State, Data> {
     spritesheet: Value<SpritesheetSource, State, Data>;
   }
 
-  export interface Drawable<State, Data = unknown> {
+  export interface Drawable<State extends GlobalState, Data = unknown> {
     x: Value<number, State, Data>;
     y: Value<number, State, Data>;
     width?: Value<number, State, Data>;
@@ -86,7 +91,7 @@ export namespace Engine {
 
   export type Signal = ClickSignal | ContextSignal;
 
-  export interface Config<State> {
+  export interface Config<State extends GlobalState> {
     drawables: Array<Drawable<State, Unknown>>;
     width: number;
     height: number;
@@ -114,8 +119,10 @@ export namespace Minesweeper {
     surroundingDangers: number;
   }
 
-  export interface State {
+  export interface State extends Engine.GlobalState {
     cells: CellState[][];
+    lastRevealedAt: number;
+    startedAt: number;
   }
 
   export type Cell = Engine.Drawable<State, CellData>;

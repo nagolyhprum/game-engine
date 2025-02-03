@@ -1,7 +1,7 @@
 import { Engine } from "../types";
 import { drawable, getValue } from "./engine";
 
-export const spritesheet = <State, Data = unknown>(
+export const spritesheet = <State extends Engine.GlobalState, Data = unknown>(
   config: Engine.SpritesheetConfig<State, Data>
 ): Engine.Drawable<State, Data> => {
   return drawable<State, Data>({

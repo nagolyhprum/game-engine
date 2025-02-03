@@ -1,6 +1,6 @@
 import { Engine, Unknown } from "../types";
 
-export const start = <State>(
+export const start = <State extends Engine.GlobalState>(
   renderable: Engine.Config<State>
 ): Engine.Instance => {
   if (typeof document !== "undefined") {
@@ -36,11 +36,12 @@ export const start = <State>(
   };
 };
 
-const render = <State>(
+const render = <State extends Engine.GlobalState>(
   renderable: Engine.Config<State>,
   context: CanvasRenderingContext2D
 ) => {
   requestAnimationFrame(() => render(renderable, context));
+  renderable.state.now = Date.now();
   renderable.state = drawAll(
     renderable.drawables as Engine.Drawable<State, unknown>[],
     context,
@@ -60,7 +61,7 @@ const loadAudio = (src: string) => {
   return audioCache[src]!;
 };
 
-export const getValue = <T, State, Data>(
+export const getValue = <T, State extends Engine.GlobalState, Data>(
   value: Engine.Value<T, State, Data>,
   state: State,
   drawable: Engine.Drawable<State, Data>
@@ -73,7 +74,7 @@ export const getValue = <T, State, Data>(
 
 const imageCache: Record<string, HTMLImageElement> = {};
 
-const loadImage = <State, Data>(
+const loadImage = <State extends Engine.GlobalState, Data>(
   value: Engine.Value<string, State, Data>,
   state: State,
   drawable: Engine.Drawable<State, Data>
@@ -88,7 +89,7 @@ const loadImage = <State, Data>(
   return imageCache[src];
 };
 
-const drawAll = <State, Data>(
+const drawAll = <State extends Engine.GlobalState, Data>(
   drawables: Array<Engine.Drawable<State, Data>>,
   context: CanvasRenderingContext2D,
   state: State,
@@ -103,7 +104,7 @@ const drawAll = <State, Data>(
   return state;
 };
 
-export const draw = <State, Data>(
+export const draw = <State extends Engine.GlobalState, Data>(
   drawable: Engine.Drawable<State, Data>,
   context: CanvasRenderingContext2D,
   state: State,
@@ -169,7 +170,7 @@ export const draw = <State, Data>(
   return state;
 };
 
-export const drawable = <State, Data = Unknown>(
+export const drawable = <State extends Engine.GlobalState, Data = Unknown>(
   config: Engine.Drawable<State, Data>
 ): Engine.Drawable<State, Data> => ({
   draw(

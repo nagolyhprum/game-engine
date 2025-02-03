@@ -1,7 +1,5 @@
 // TODO : MISSING
 // TILEMAP
-// TIMER
-// REMAINING DANGER COUNT
 
 import { start, drawable } from "../src/game/engine";
 import { ninePatch } from "../src/game/nine-patch";
@@ -10,6 +8,8 @@ import { spritesheet } from "../src/game/spritesheet";
 import { Minesweeper } from "../src/types";
 import { shuffle } from "../src/utility";
 
+const TEXT_WIDTH = 100;
+const TEXT_OFFSET = 12;
 const MENU_HEIGHT = 50;
 const CELL_SIZE = 40;
 const ROWS = 10;
@@ -87,6 +87,8 @@ const findDangers = (state: Minesweeper.State, row: number, column: number) => {
 };
 
 const restart = (state: Minesweeper.State) => {
+  state.lastRevealedAt = 0;
+  state.startedAt = 0;
   const cells = state.cells.flat();
   // reset the state
   cells.forEach((cell) => {
@@ -130,6 +132,8 @@ const onClick = (
         }
       }
     }
+    state.lastRevealedAt = state.now;
+    state.startedAt = state.startedAt || state.now;
   }
   return state;
 };
@@ -226,13 +230,29 @@ const menu = drawable<Minesweeper.State>({
       data: null,
     }),
     drawable({
-      x: 25,
-      y: MENU_HEIGHT / 2,
+      x: TEXT_OFFSET,
+      y: TEXT_OFFSET,
+      width: TEXT_WIDTH,
+      height: MENU_HEIGHT - 2 * TEXT_OFFSET,
       baseline: "middle",
-      align: "left",
-      text: "00:00",
+      align: "center",
+      text: (state) => {
+        const winState = getWinState(state);
+        const diff = Math.floor(
+          (winState === "neutral"
+            ? state.now - (state.startedAt || state.now)
+            : state.lastRevealedAt - state.startedAt) / 1000
+        );
+
+        const seconds = diff % 60;
+        const minutes = Math.floor(diff / 60);
+        return `${minutes.toString().padStart(2, "0")}${
+          seconds % 2 ? " " : ":"
+        }${seconds.toString().padStart(2, "0")}`;
+      },
       color: "red",
-      font: `${MENU_HEIGHT / 2}px Courier New`,
+      font: `${MENU_HEIGHT - TEXT_OFFSET * 2 - 5}px Courier New`,
+      background: "black",
       data: null,
     }),
     drawable({
@@ -259,10 +279,12 @@ const menu = drawable<Minesweeper.State>({
       data: null,
     }),
     drawable({
-      x: WIDTH - 25,
-      y: MENU_HEIGHT / 2,
+      x: WIDTH - TEXT_OFFSET - TEXT_WIDTH,
+      y: TEXT_OFFSET,
+      width: TEXT_WIDTH,
+      height: MENU_HEIGHT - 2 * TEXT_OFFSET,
       baseline: "middle",
-      align: "right",
+      align: "center",
       text: (state) => {
         const dangers = Math.max(
           0,
@@ -271,39 +293,20 @@ const menu = drawable<Minesweeper.State>({
         return dangers.toString().padStart(2, "0");
       },
       color: "red",
-      font: `${MENU_HEIGHT / 2}px Courier New`,
+      background: "black",
+      font: `${MENU_HEIGHT - TEXT_OFFSET * 2 - 5}px Courier New`,
       data: null,
     }),
   ],
-});
-
-const winState = drawable<Minesweeper.State>({
-  x: 0,
-  y: 0,
-  width: WIDTH,
-  height: HEIGHT,
-  background: "rgba(0, 0, 0, .3)",
-  baseline: "middle",
-  align: "center",
-  data: null,
-  visible: (state) => {
-    const winState = getWinState(state);
-    return winState !== "neutral";
-  },
-  text: (state) => {
-    const winState = getWinState(state);
-    return winState === "win" ? "You win!" : "You lose!";
-  },
-  color: (state) => {
-    const winState = getWinState(state);
-    return winState === "win" ? "green" : "red";
-  },
 });
 
 const engine = start<Minesweeper.State>({
   width: WIDTH,
   height: HEIGHT,
   state: restart({
+    now: Date.now(),
+    lastRevealedAt: 0,
+    startedAt: 0,
     cells: Array.from({ length: ROWS }).map((_, row) =>
       Array.from({ length: COLUMNS }).map((_, column) => ({
         row,
@@ -316,7 +319,5 @@ const engine = start<Minesweeper.State>({
     ),
   }),
   signals: [],
-  drawables: [menu, ...cells, winState],
+  drawables: [menu, ...cells],
 });
-
-// 238

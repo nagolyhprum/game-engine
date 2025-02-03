@@ -16,7 +16,7 @@ const getCanvas = () => {
   };
 };
 
-export const ninePatch = <State, Data = unknown>(
+export const ninePatch = <State extends Engine.GlobalState, Data = unknown>(
   config: Engine.NinePatchConfig<State, Data>
 ) => {
   const { canvas: backCanvas, context: backContext } = getCanvas();
