@@ -1,4 +1,3 @@
-// REVEAL TOP CARDS
 // DROP FOUNDATION
 // ALLOW EMPTY PILES TO TAKE KINGS
 // TIMER
@@ -128,7 +127,6 @@ const cards = SUITS.flatMap((suit) => {
           if (getColor(to) === getColor(from)) {
             return state;
           }
-
           if (from.rank - to.rank !== -1) {
             return state;
           }
@@ -137,6 +135,12 @@ const cards = SUITS.flatMap((suit) => {
           card.isRevealed = true;
         });
         pile.push(...state.hand.cards.splice(0));
+        state.tableau.forEach((pile) => {
+          const top = pile.at(-1);
+          if (top) {
+            top.isRevealed = true;
+          }
+        });
         return state;
       },
     });
