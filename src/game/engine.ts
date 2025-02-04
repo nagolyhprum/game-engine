@@ -1,7 +1,8 @@
 import { Engine, Unknown } from "../types";
+import { isDefined } from "../utility";
 
 export const start = <State extends Engine.GlobalState>(
-  config: Engine.EngineWithOptionals<State>
+  config: Engine.ConfigWithOptionals<State>
 ) => {
   const renderable: Engine.Config<State> = {
     signals: [],
@@ -86,6 +87,8 @@ const render = <State extends Engine.GlobalState>(
   requestAnimationFrame(() => render(renderable, context, engine));
   const before = Date.now();
   renderable.state.now = before;
+  context.fillStyle = renderable.background ?? "black";
+  context.fillRect(0, 0, context.canvas.width, context.canvas.height);
   renderable.state = drawAll({
     drawables: renderable.drawables as Engine.Drawable<State, unknown>[],
     context,
@@ -187,10 +190,10 @@ export const draw = <State extends Engine.GlobalState, Data>({
     drawable.isMouseInBounds =
       mouse.x >= dx && mouse.x < dx + dw && mouse.y >= dy && mouse.y < dy + dh;
     const source = getValue(drawable.source, state, drawable);
-    const sx = getValue(source?.x, state, drawable) ?? 0,
-      sy = getValue(source?.y, state, drawable) ?? 0,
-      sw = getValue(source?.width, state, drawable) ?? dw,
-      sh = getValue(source?.height, state, drawable) ?? dh;
+    const sx = getValue(source?.x, state, drawable),
+      sy = getValue(source?.y, state, drawable),
+      sw = getValue(source?.width, state, drawable),
+      sh = getValue(source?.height, state, drawable);
     signals.forEach((signal) => {
       if (signal.name === "click") {
         if (
@@ -227,13 +230,20 @@ export const draw = <State extends Engine.GlobalState, Data>({
         }
       }
     });
-    if (image?.complete) {
-      context.drawImage(image, sx, sy, sw, sh, dx, dy, dw, dh);
-    }
+    context.beginPath();
+    const radius = getValue(drawable.radius, state, drawable) ?? 0;
+    context.roundRect(dx, dy, dw, dh, radius);
     const background = getValue(drawable.background, state, drawable);
     if (background) {
       context.fillStyle = background;
-      context.fillRect(dx, dy, dw, dh);
+      context.fill();
+    }
+    if (image?.complete) {
+      if (isDefined(sx) && isDefined(sy) && isDefined(sw) && isDefined(sh)) {
+        context.drawImage(image, sx, sy, sw, sh, dx, dy, dw, dh);
+      } else {
+        context.drawImage(image, dx, dy, dw, dh);
+      }
     }
     const text = getValue(drawable.text, state, drawable);
     if (text) {
@@ -244,6 +254,13 @@ export const draw = <State extends Engine.GlobalState, Data>({
         getValue(drawable.font, state, drawable) ?? `24px sans-sarif`;
       context.fillStyle = getValue(drawable.color, state, drawable) ?? "";
       context.fillText(text, dx + dw / 2, dy + dh / 2);
+    }
+    const stroke = getValue(drawable.stroke, state, drawable);
+    if (stroke) {
+      const lineWidth = getValue(drawable.lineWidth, state, drawable) ?? 1;
+      context.lineWidth = lineWidth;
+      context.strokeStyle = stroke;
+      context.stroke();
     }
     if (drawable.children) {
       state = drawAll({
@@ -256,6 +273,7 @@ export const draw = <State extends Engine.GlobalState, Data>({
       });
     }
     if (debug) {
+      context.lineWidth = 1;
       context.strokeStyle = "red";
       context.beginPath();
       context.rect(dx, dy, dw, dh);
@@ -272,6 +290,7 @@ export const drawable = <State extends Engine.GlobalState, Data = Unknown>(
     draw({ context, state, signals, debug, engine }) {
       return draw({ drawable: this, context, state, signals, debug, engine });
     },
+    data: config.data!,
     id: crypto.randomUUID(),
     ...config,
   };

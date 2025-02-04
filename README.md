@@ -22,8 +22,22 @@ https://github.com/nagolyhprum/game-engine
 
 # Assets
 
+Minesweeper
+
+- https://opengameart.org/content/minesweeper-esk-assets
+- https://opengameart.org/content/blank-button
 - https://opengameart.org/content/explosion-0
+
+Solitaire
+
+- https://opengameart.org/content/cards-set
 
 # Ideas
 
+- Solitaire
 - Supaplex
+
+# TODO
+
+- TILEMAP
+- MAKE STATE IMMUTABLE

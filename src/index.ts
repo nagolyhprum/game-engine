@@ -1,12 +1,43 @@
 import fs from "fs/promises";
 import path from "path";
 import { URL } from "url";
+import { Game } from "./types";
 
 import "../scripts/minesweeper";
+import "../scripts/solitaire";
 
 const port = process.env.PORT || 80;
 
-const html = `<!doctype html>
+const games = [
+  {
+    name: "Minesweeper",
+    slug: "minesweeper",
+  },
+  {
+    name: "Solitaire",
+    slug: "solitaire",
+  },
+];
+
+const indexResponse = `<!doctype html>
+<html>
+    <head>
+      <style>
+        canvas {
+          background : black;
+        }
+      </style>
+    </head>
+    </body>
+      <ul>
+        ${games
+          .map((game) => `<li><a href="/${game.slug}">${game.name}</a></li>`)
+          .join("")}
+      </ul>
+    </body>
+</html>`;
+
+const gameResponse = (game: Game) => `<!doctype html>
 <html>
     <head>
       <style>
@@ -19,8 +50,12 @@ const html = `<!doctype html>
       </style>
     </head>
     </body>
+        <h1>${game.name}</h1>
+        <div>
+          <a href="/">Home</a>
+        </div>
         <canvas>Canvas element not supported.</canvas>
-        <script src="/scripts/minesweeper"></script>
+        <script src="/scripts/${game.slug}"></script>
     </body>
 </html>`;
 
@@ -49,7 +84,11 @@ Bun.serve({
   async fetch(request) {
     const url = new URL(request.url);
     if (url.pathname.startsWith(PUBLIC)) {
-      const filePath = path.join(__dirname, "..", url.pathname);
+      const filePath = path.join(
+        __dirname,
+        "..",
+        decodeURIComponent(url.pathname)
+      );
       const extension = path.extname(filePath);
       const file = await fs.readFile(filePath);
       return new Response(file, {
@@ -77,7 +116,16 @@ Bun.serve({
         });
       }
     }
-    return new Response(html, {
+    const gameSlug = url.pathname.slice(1);
+    const game = games.find((game) => game.slug === gameSlug);
+    if (game) {
+      return new Response(gameResponse(game), {
+        headers: {
+          "Content-Type": "text/html",
+        },
+      });
+    }
+    return new Response(indexResponse, {
       headers: {
         "Content-Type": "text/html",
       },

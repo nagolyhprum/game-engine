@@ -1,7 +1,3 @@
-// TODO : MISSING
-// TILEMAP
-// MAKE STATE IMMUTABLE
-
 import { start, drawable, defaultState } from "../src/game/engine";
 import { ninePatch } from "../src/game/nine-patch";
 import { spritesheet } from "../src/game/spritesheet";
@@ -120,18 +116,17 @@ const onClick = (
   isRightClick = false
 ) => {
   const winState = getWinState(state);
-  const cellData = cell.data;
-  if (cellData && winState === "neutral") {
-    const data = state.cells[cellData.row]?.[cellData.column];
+  if (winState === "neutral") {
+    const data = state.cells[cell.data.row]?.[cell.data.column];
     if (data) {
       if (isRightClick) {
         data.isFlagged = !data.isFlagged;
       } else {
         if (!data.isRevealed && !data.isFlagged) {
           if (data.isDangerous) {
-            engine.play("/public/explosion.wav", 0.25);
+            engine.play("/public/minesweeper/explosion.wav", 0.25);
           }
-          revealNeighbors(state, cellData.row, cellData.column);
+          revealNeighbors(state, cell.data.row, cell.data.column);
         }
       }
     }
@@ -167,7 +162,7 @@ const cells = Array.from({ length: ROWS * COLUMNS }).map(
     const row = Math.floor(index / COLUMNS);
     return spritesheet({
       spritesheet(state) {
-        const { row = -1, column = -1 } = this.data || {};
+        const { row, column } = this.data;
         const source = getCellSource(state.cells[row]?.[column]);
         return {
           column: source.column,
@@ -180,7 +175,7 @@ const cells = Array.from({ length: ROWS * COLUMNS }).map(
       y: row * CELL_SIZE + MENU_HEIGHT,
       width: CELL_SIZE,
       height: CELL_SIZE,
-      image: "/public/minesweeper.png",
+      image: "/public/minesweeper/minesweeper.png",
       data: {
         column,
         row,
@@ -224,7 +219,7 @@ const menu = drawable<Minesweeper.State>({
             width: 16,
             height: 16,
           },
-          image: "/public/minesweeper.png",
+          image: "/public/minesweeper/minesweeper.png",
         }),
       ],
     }),
@@ -259,8 +254,8 @@ const menu = drawable<Minesweeper.State>({
       width: 40,
       height: 40,
       ninePatch: {
-        sourceEdge: 15,
-        destinationEdge: 15,
+        sourceEdge: 12,
+        destinationEdge: DESTINATION_EDGE,
         width: 256,
         height: 64,
       },
@@ -280,7 +275,7 @@ const menu = drawable<Minesweeper.State>({
             width: 256,
             height: 64,
           },
-          image: "/public/buttons.png",
+          image: "/public/minesweeper/buttons.png",
         }),
       ],
     }),

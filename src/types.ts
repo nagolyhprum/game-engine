@@ -1,7 +1,12 @@
 export type Unknown = any;
 
+export interface Game {
+  name: string;
+  slug: string;
+}
+
 export namespace Engine {
-  export type EngineWithOptionals<State extends GlobalState> = Omit<
+  export type ConfigWithOptionals<State extends GlobalState> = Omit<
     Config<State>,
     "signals"
   >;
@@ -93,6 +98,9 @@ export namespace Engine {
     width?: Value<number, State, Data>;
     height?: Value<number, State, Data>;
     background?: Value<string, State, Data>;
+    stroke?: Value<string, State, Data>;
+    lineWidth?: Value<number, State, Data>;
+    radius?: Value<number, State, Data>;
     text?: Value<string, State, Data>;
     align?: Value<CanvasTextAlign, State, Data>;
     baseline?: Value<CanvasTextBaseline, State, Data>;
@@ -110,7 +118,7 @@ export namespace Engine {
       Data
     >;
     image?: Value<string, State, Data>;
-    data?: Data;
+    data: Data;
     onClick?: (
       this: Drawable<State, Data>,
       config: DrawableEventConfig<State>
@@ -126,13 +134,6 @@ export namespace Engine {
       config: DrawableDrawConfig<State>
     ) => State;
     parent?: Drawable<State, Unknown>;
-  }
-
-  export interface Bounds {
-    top: number;
-    right: number;
-    bottom: number;
-    left: number;
   }
 
   export interface ClickSignal {
@@ -155,6 +156,7 @@ export namespace Engine {
     height: number;
     state: State;
     signals: Signal[];
+    background?: string;
     debug?: boolean;
   }
 
@@ -191,4 +193,26 @@ export namespace Minesweeper {
   export type Cell = Engine.Drawable<State, CellData>;
 
   export type WinState = "win" | "lose" | "neutral";
+}
+
+export namespace Solitaire {
+  export interface State extends Engine.GlobalState {
+    stock: CardData[][];
+    tableau: CardData[][];
+    foundation: CardData[][];
+    hand: {
+      cards: CardData[];
+      pile: string;
+      index: number;
+    };
+  }
+
+  export type Suit = "Spades" | "Hearts" | "Diamond" | "Clubs";
+  export type Value = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13;
+
+  export interface CardData {
+    suit: Suit;
+    value: Value;
+    isRevealed: boolean;
+  }
 }
