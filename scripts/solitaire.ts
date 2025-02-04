@@ -1,5 +1,6 @@
 import { defaultState, drawable, start } from "../src/game/engine";
 import { Solitaire } from "../src/types";
+import { shuffle } from "../src/utility";
 
 const ACE = 1;
 const JACK = 11;
@@ -17,7 +18,7 @@ const WIDTH = PADDING * 8 + CARD_WIDTH * 7;
 const HEIGHT = CARD_HEIGHT + (13 + 6) * CARD_HEIGHT * 0.2;
 
 const SUITS: Solitaire.Suit[] = [CLUBS, DIAMONDS, HEARTS, SPADES];
-const VALUES: Solitaire.Value[] = [
+const RANKS: Solitaire.Rank[] = [
   ACE,
   2,
   3,
@@ -34,20 +35,30 @@ const VALUES: Solitaire.Value[] = [
 ];
 
 const cards = SUITS.flatMap((suit) => {
-  return VALUES.map((value) => {
+  return RANKS.map((rank) => {
     return drawable<Solitaire.State, Solitaire.CardData>({
-      x: -CARD_WIDTH,
-      y: -CARD_HEIGHT,
       width: CARD_WIDTH,
       height: CARD_HEIGHT,
       data: {
         suit,
-        value,
-        isRevealed: false,
+        rank,
       },
-      image() {
-        return this.data.isRevealed
-          ? `/public/solitaire/${this.data.suit} ${this.data.value}.png`
+      x(state) {
+        const card = getCard(state, this.data);
+        return card.x;
+      },
+      y(state) {
+        const card = getCard(state, this.data);
+        return card.y;
+      },
+      z(state) {
+        const card = getCard(state, this.data);
+        return card.index;
+      },
+      image(state) {
+        const card = getCard(state, this.data);
+        return card.isRevealed
+          ? `/public/solitaire/${this.data.suit} ${this.data.rank}.png`
           : `/public/solitaire/Back Blue 1.png`;
       },
     });
@@ -91,11 +102,90 @@ const tableau = Array.from({ length: 7 }).map((_, index) => {
   });
 });
 
+const getCard = (
+  state: Solitaire.State,
+  data: Solitaire.CardData
+): {
+  pile: string;
+  x: number;
+  y: number;
+  index: number;
+  isRevealed: boolean;
+} => {
+  for (const pile of state.tableau) {
+    for (const card of pile) {
+      if (card.rank === data.rank && card.suit === data.suit) {
+        const pileIndex = state.tableau.indexOf(pile);
+        const cardIndex = pile.indexOf(card);
+        return {
+          x: (pileIndex + 1) * PADDING + pileIndex * CARD_WIDTH,
+          y: 2 * PADDING + CARD_HEIGHT + cardIndex * CARD_HEIGHT * 0.2,
+          index: cardIndex,
+          pile: "tableau",
+          isRevealed: card.isRevealed,
+        };
+      }
+    }
+  }
+  for (const pile of state.stock) {
+    for (const card of pile) {
+      if (card.rank === data.rank && card.suit === data.suit) {
+        const pileIndex = state.stock.indexOf(pile);
+        const cardIndex = pile.indexOf(card);
+        return {
+          x: (pileIndex + 1) * PADDING + pileIndex * CARD_WIDTH,
+          y: PADDING,
+          index: cardIndex,
+          pile: "stock",
+          isRevealed: pileIndex === 1,
+        };
+      }
+    }
+  }
+  return {
+    x: 0,
+    y: HEIGHT - CARD_HEIGHT,
+    index: 0,
+    pile: "error",
+    isRevealed: true,
+  };
+};
+
+const restart = (state: Solitaire.State) => {
+  state.foundation = Array.from({ length: 4 }).map(() => []);
+  state.tableau = Array.from({ length: 7 }).map(() => []);
+  state.stock = Array.from({ length: 2 }).map(() => []);
+  state.hand.cards = [];
+  state.hand.index = -1;
+  state.hand.pile = "";
+  const deck = shuffle(
+    SUITS.flatMap((suit) =>
+      RANKS.map((rank) => ({
+        rank,
+        suit,
+        isRevealed: false,
+      }))
+    )
+  );
+  for (let i = 0; i < state.tableau.length; i++) {
+    for (let j = 0; j < i; j++) {
+      state.tableau[i]!.push(deck.pop()!);
+    }
+    const top = deck.pop()!;
+    top.isRevealed = true;
+    state.tableau[i]!.push(top);
+  }
+  state.stock[0] = deck;
+  const top = deck.pop()!;
+  state.stock[1]?.push(top);
+  return state;
+};
+
 start<Solitaire.State>({
   drawables: [...foundation, ...stock, ...tableau, ...cards],
   width: WIDTH,
   height: HEIGHT,
-  state: {
+  state: restart({
     ...defaultState(),
     foundation: [],
     stock: [],
@@ -105,7 +195,7 @@ start<Solitaire.State>({
       pile: "",
       index: -1,
     },
-  },
+  }),
   background: "green",
-  //   debug: true,
+  debug: true,
 });

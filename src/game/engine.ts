@@ -159,12 +159,19 @@ const drawAll = <State extends Engine.GlobalState, Data>({
   debug,
   engine,
 }: Engine.DrawAllConfig<State, Data>): State => {
-  drawables.forEach((drawable) => {
-    const draw = drawable.draw;
-    if (draw) {
-      state = draw.call(drawable, { context, state, signals, debug, engine });
-    }
-  });
+  const zMap = drawables.reduce((zMap, drawable) => {
+    zMap[drawable.id] = getValue(drawable.z, state, drawable) ?? 0;
+    return zMap;
+  }, {} as Record<string, number>);
+
+  drawables
+    .sort((a, b) => (zMap[a.id] ?? 0) - (zMap[b.id] ?? 0))
+    .forEach((drawable) => {
+      const draw = drawable.draw;
+      if (draw) {
+        state = draw.call(drawable, { context, state, signals, debug, engine });
+      }
+    });
   return state;
 };
 

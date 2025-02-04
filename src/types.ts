@@ -95,6 +95,7 @@ export namespace Engine {
     debug?: boolean;
     x: Value<number, State, Data>;
     y: Value<number, State, Data>;
+    z?: Value<number, State, Data>;
     width?: Value<number, State, Data>;
     height?: Value<number, State, Data>;
     background?: Value<string, State, Data>;
@@ -196,23 +197,28 @@ export namespace Minesweeper {
 }
 
 export namespace Solitaire {
+  export interface CardState {
+    suit: Suit;
+    rank: Rank;
+    isRevealed: boolean;
+  }
+
   export interface State extends Engine.GlobalState {
-    stock: CardData[][];
-    tableau: CardData[][];
-    foundation: CardData[][];
+    stock: CardState[][];
+    tableau: CardState[][];
+    foundation: CardState[][];
     hand: {
-      cards: CardData[];
+      cards: CardState[];
       pile: string;
       index: number;
     };
   }
 
   export type Suit = "Spades" | "Hearts" | "Diamond" | "Clubs";
-  export type Value = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13;
+  export type Rank = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13;
 
   export interface CardData {
     suit: Suit;
-    value: Value;
-    isRevealed: boolean;
+    rank: Rank;
   }
 }
