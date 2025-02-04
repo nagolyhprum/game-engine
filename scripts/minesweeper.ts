@@ -330,7 +330,7 @@ const menu = drawable<Minesweeper.State>({
   ],
 });
 
-const engine = start<Minesweeper.State>({
+start<Minesweeper.State>({
   width: WIDTH,
   height: HEIGHT,
   state: restart({
@@ -348,7 +348,5 @@ const engine = start<Minesweeper.State>({
       }))
     ),
   }),
-  signals: [],
   drawables: [menu, ...cells],
-  debug: true,
 });

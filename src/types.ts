@@ -1,7 +1,15 @@
 export type Unknown = any;
 
 export namespace Engine {
-  export type WithOptionals<Drawable, Data> = Omit<Drawable, "data" | "id"> & {
+  export type EngineWithOptionals<State extends GlobalState> = Omit<
+    Config<State>,
+    "signals"
+  >;
+
+  export type DrawableWithOptionals<State extends GlobalState, Data> = Omit<
+    Drawable<State, Data>,
+    "data" | "id"
+  > & {
     data?: Data;
     id?: string;
   };
@@ -22,7 +30,7 @@ export namespace Engine {
     context: CanvasRenderingContext2D;
     state: State;
     signals: Engine.Signal[];
-    debug: boolean;
+    debug?: boolean;
     engine: Instance;
   }
 
@@ -62,8 +70,7 @@ export namespace Engine {
     destinationEdge: Value<number, State, Data>;
   }
 
-  export interface NinePatchConfig<State extends GlobalState, Data>
-    extends Drawable<State, Data> {
+  export interface NinePatchConfig<State extends GlobalState, Data> {
     ninePatch: Value<NinePatchSource<State, Data>, State, Data>;
   }
 
@@ -74,8 +81,7 @@ export namespace Engine {
     column: Value<number, State, Data>;
   }
 
-  export interface SpritesheetConfig<State extends GlobalState, Data>
-    extends Drawable<State, Data> {
+  export interface SpritesheetConfig<State extends GlobalState, Data> {
     spritesheet: Value<SpritesheetSource<State, Data>, State, Data>;
   }
 
@@ -149,7 +155,7 @@ export namespace Engine {
     height: number;
     state: State;
     signals: Signal[];
-    debug: boolean;
+    debug?: boolean;
   }
 
   export interface Instance {

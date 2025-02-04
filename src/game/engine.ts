@@ -1,8 +1,12 @@
 import { Engine, Unknown } from "../types";
 
 export const start = <State extends Engine.GlobalState>(
-  renderable: Engine.Config<State>
+  config: Engine.EngineWithOptionals<State>
 ) => {
+  const renderable: Engine.Config<State> = {
+    signals: [],
+    ...config,
+  };
   const canvasMap: Record<
     string,
     {
@@ -262,7 +266,7 @@ export const draw = <State extends Engine.GlobalState, Data>({
 };
 
 export const drawable = <State extends Engine.GlobalState, Data = Unknown>(
-  config: Engine.WithOptionals<Engine.Drawable<State, Data>, Data>
+  config: Engine.DrawableWithOptionals<State, Data>
 ): Engine.Drawable<State, Data> => {
   const parent: Engine.Drawable<State, Data> = {
     draw({ context, state, signals, debug, engine }) {

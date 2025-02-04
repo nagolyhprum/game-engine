@@ -2,7 +2,8 @@ import { Engine } from "../types";
 import { draw, drawable, getValue } from "./engine";
 
 export const ninePatch = <State extends Engine.GlobalState, Data = unknown>(
-  config: Engine.WithOptionals<Engine.NinePatchConfig<State, Data>, Data>
+  config: Engine.DrawableWithOptionals<State, Data> &
+    Engine.NinePatchConfig<State, Data>
 ) => {
   return drawable({
     ...config,
