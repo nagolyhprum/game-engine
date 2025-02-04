@@ -54,8 +54,14 @@ export const start = <State extends Engine.GlobalState>(
       });
       return false;
     };
-    canvas.onmouseup = () => {
+    canvas.onmouseup = (event) => {
       renderable.state.mouse.leftIsDown = false;
+      event.preventDefault();
+      event.stopPropagation();
+      renderable.signals.push({
+        name: "mouseup",
+      });
+      return false;
     };
     canvas.onmouseleave = () => {
       renderable.state.mouse.leftIsDown = false;
@@ -216,8 +222,8 @@ export const draw = <State extends Engine.GlobalState, Data>({
       sw = getValue(source?.width, state, drawable),
       sh = getValue(source?.height, state, drawable);
     signals.forEach((signal) => {
-      if (signal.name === "click") {
-        if (drawable.onClick && drawable.isMouseInBounds) {
+      if (drawable.isMouseInBounds) {
+        if (signal.name === "click" && drawable.onClick) {
           state = drawable.onClick({
             state,
             context,
@@ -226,9 +232,7 @@ export const draw = <State extends Engine.GlobalState, Data>({
             signals,
           });
         }
-      }
-      if (signal.name === "context") {
-        if (drawable.onContext && drawable.isMouseInBounds) {
+        if (signal.name === "context" && drawable.onContext) {
           state = drawable.onContext({
             state,
             context,
@@ -237,10 +241,17 @@ export const draw = <State extends Engine.GlobalState, Data>({
             signals,
           });
         }
-      }
-      if (signal.name === "mousedown") {
-        if (drawable.onMouseDown && drawable.isMouseInBounds) {
+        if (signal.name === "mousedown" && drawable.onMouseDown) {
           state = drawable.onMouseDown({
+            state,
+            context,
+            debug,
+            engine,
+            signals,
+          });
+        }
+        if (signal.name === "mouseup" && drawable.onMouseUp) {
+          state = drawable.onMouseUp({
             state,
             context,
             debug,

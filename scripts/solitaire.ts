@@ -1,3 +1,10 @@
+// RETURN THE CARDS TO THE PILE
+// DROP ALTERNATING COLORS
+// REVEAL TOP CARDS
+// DROP FOUNDATION
+// TIMER
+// SCORE
+
 import { defaultState, drawable, start } from "../src/game/engine";
 import { Solitaire } from "../src/types";
 import { shuffle } from "../src/utility";
@@ -156,7 +163,7 @@ const getCard = (
           cardIndex,
           pileIndex,
           pile: "tableau",
-          isRevealed: true, // card.isRevealed,
+          isRevealed: card.isRevealed,
         };
       }
     }
@@ -234,8 +241,23 @@ const restart = (state: Solitaire.State) => {
   return state;
 };
 
+const dropzone = drawable<Solitaire.State>({
+  x: 0,
+  y: 0,
+  width: WIDTH,
+  height: HEIGHT,
+  onMouseUp({ state }) {
+    if (state.hand.pile !== "hand" && state.hand.pile !== "error") {
+      const pile = state[state.hand.pile][state.hand.pileIndex]?.push(
+        ...state.hand.cards.splice(0)
+      );
+    }
+    return state;
+  },
+});
+
 start<Solitaire.State>({
-  drawables: [...foundation, ...stock, ...tableau, ...cards],
+  drawables: [...foundation, ...stock, ...tableau, ...cards, dropzone],
   width: WIDTH,
   height: HEIGHT,
   state: restart({
