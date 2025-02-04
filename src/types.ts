@@ -1,6 +1,10 @@
 export type Unknown = any;
 
 export namespace Engine {
+  export type WithOptionals<Drawable, Data> = Omit<Drawable, "data"> & {
+    data?: Data;
+  };
+
   export interface GlobalState {
     now: number;
     mouse: {
@@ -78,7 +82,7 @@ export namespace Engine {
     onClick?: (this: Drawable<State, Data>, state: State) => State;
     onContext?: (this: Drawable<State, Data>, state: State) => State;
     children?: Array<Drawable<State, Unknown>>;
-    bounds?: Bounds;
+    isMouseInBounds?: boolean;
     draw?: (
       this: Drawable<State, Data>,
       context: CanvasRenderingContext2D,

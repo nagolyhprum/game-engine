@@ -1,4 +1,5 @@
 // TODO : MISSING
+// DEBUGGER
 // TILEMAP
 // MAKE STATE IMMUTABLE
 
@@ -199,7 +200,6 @@ const menu = drawable<Minesweeper.State>({
   y: 0,
   width: WIDTH,
   height: MENU_HEIGHT,
-  data: null,
   children: [
     ninePatch({
       x: 0,
@@ -225,10 +225,8 @@ const menu = drawable<Minesweeper.State>({
             height: 16,
           },
           image: "/public/minesweeper.png",
-          data: null,
         }),
       ],
-      data: null,
     }),
     drawable({
       x: TEXT_OFFSET,
@@ -254,7 +252,6 @@ const menu = drawable<Minesweeper.State>({
       color: "red",
       font: `${MENU_HEIGHT - TEXT_OFFSET * 2 - 5}px Courier New`,
       background: "black",
-      data: null,
     }),
     ninePatch({
       x: WIDTH / 2 - 20,
@@ -276,28 +273,16 @@ const menu = drawable<Minesweeper.State>({
           spritesheet: {
             column: 0,
             row(state) {
-              if (state.mouse.leftIsDown) {
-                const { x, y } = state.mouse.location;
-                const {
-                  top = 0,
-                  right = 0,
-                  bottom = 0,
-                  left = 0,
-                } = this.parent?.bounds ?? {};
-                if (x >= left && x < right && y >= top && y < bottom) {
-                  return 1;
-                }
-              }
-              return 0;
+              return state.mouse.leftIsDown && this.parent?.isMouseInBounds
+                ? 1
+                : 0;
             },
             width: 256,
             height: 64,
           },
           image: "/public/buttons.png",
-          data: null,
         }),
       ],
-      data: null,
     }),
     drawable({
       x: WIDTH / 2 - 25,
@@ -323,7 +308,6 @@ const menu = drawable<Minesweeper.State>({
       onClick(state) {
         return restart(state);
       },
-      data: null,
     }),
     drawable({
       x: WIDTH - TEXT_OFFSET - TEXT_WIDTH,
@@ -342,7 +326,6 @@ const menu = drawable<Minesweeper.State>({
       color: "red",
       background: "black",
       font: `${MENU_HEIGHT - TEXT_OFFSET * 2 - 5}px Courier New`,
-      data: null,
     }),
   ],
 });

@@ -137,12 +137,9 @@ export const draw = <State extends Engine.GlobalState, Data>(
       dy = getValue(drawable.y, state, drawable) ?? 0,
       dw = getValue(drawable.width, state, drawable) ?? 0,
       dh = getValue(drawable.height, state, drawable) ?? 0;
-    const bounds = drawable.bounds ?? {};
-    bounds.left = dx;
-    bounds.right = dx + dw;
-    bounds.top = dy;
-    bounds.bottom = dy + dh;
-    drawable.bounds = bounds;
+    const mouse = state.mouse.location;
+    drawable.isMouseInBounds =
+      mouse.x >= dx && mouse.x < dx + dw && mouse.y >= dy && mouse.y < dy + dh;
     const source = getValue(drawable.source, state, drawable);
     const sx = getValue(source?.x, state, drawable) ?? 0,
       sy = getValue(source?.y, state, drawable) ?? 0,
@@ -196,7 +193,7 @@ export const draw = <State extends Engine.GlobalState, Data>(
 };
 
 export const drawable = <State extends Engine.GlobalState, Data = Unknown>(
-  config: Engine.Drawable<State, Data>
+  config: Engine.WithOptionals<Engine.Drawable<State, Data>, Data>
 ): Engine.Drawable<State, Data> => {
   const parent: Engine.Drawable<State, Data> = {
     draw(
