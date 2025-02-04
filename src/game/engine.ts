@@ -57,21 +57,30 @@ export const start = <State extends Engine.GlobalState>(
     canvas.onmouseout = () => {
       renderable.state.mouse.leftIsDown = false;
     };
+    canvas.onselectstart = (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      return false;
+    };
     canvas.onclick = (event) => {
       event.preventDefault();
+      event.stopPropagation();
       renderable.signals.push({
         x: event.offsetX,
         y: event.offsetY,
         name: "click",
       });
+      return false;
     };
     canvas.oncontextmenu = (event) => {
       event.preventDefault();
+      event.stopPropagation();
       renderable.signals.push({
         x: event.offsetX,
         y: event.offsetY,
         name: "context",
       });
+      return false;
     };
     render(renderable, context, engine);
   }
@@ -163,7 +172,6 @@ const drawAll = <State extends Engine.GlobalState, Data>({
     zMap[drawable.id] = getValue(drawable.z, state, drawable) ?? 0;
     return zMap;
   }, {} as Record<string, number>);
-
   drawables
     .sort((a, b) => (zMap[a.id] ?? 0) - (zMap[b.id] ?? 0))
     .forEach((drawable) => {

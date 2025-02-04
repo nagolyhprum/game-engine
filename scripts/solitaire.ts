@@ -74,6 +74,16 @@ const stock = Array.from({ length: 2 }).map((_, index) =>
     stroke: "white",
     radius: 5,
     lineWidth: 2,
+    onClick({ state }) {
+      const top = state.stock[0]?.pop();
+      if (top) {
+        state.stock[1]?.push(top);
+      } else {
+        state.stock[0] = state.stock[1]?.reverse()!;
+        state.stock[1] = [];
+      }
+      return state;
+    },
   })
 );
 
