@@ -1,7 +1,6 @@
-// RETURN THE CARDS TO THE PILE
-// DROP ALTERNATING COLORS
 // REVEAL TOP CARDS
 // DROP FOUNDATION
+// ALLOW EMPTY PILES TO TAKE KINGS
 // TIMER
 // SCORE
 
@@ -24,7 +23,6 @@ const PADDING = 5;
 const CARD_PEEK = 0.35;
 const WIDTH = PADDING * 8 + CARD_WIDTH * 7;
 const HEIGHT = CARD_HEIGHT + (13 + 6) * CARD_HEIGHT * CARD_PEEK;
-
 const SUITS: Solitaire.Suit[] = [CLUBS, DIAMONDS, HEARTS, SPADES];
 const RANKS: Solitaire.Rank[] = [
   ACE,
@@ -41,6 +39,9 @@ const RANKS: Solitaire.Rank[] = [
   QUEEN,
   KING,
 ];
+
+const getColor = (state: Solitaire.CardState) =>
+  [HEARTS, DIAMONDS].includes(state.suit) ? "red" : "black";
 
 const cards = SUITS.flatMap((suit) => {
   return RANKS.map((rank) => {
@@ -93,6 +94,49 @@ const cards = SUITS.flatMap((suit) => {
             }
           }
         }
+        return state;
+      },
+      onMouseUp({ state }) {
+        const card = getCard(state, this.data);
+        if (
+          card.pile === "hand" ||
+          card.pile === "error" ||
+          card.pile === "stock"
+        ) {
+          return state;
+        }
+        const pile = state[card.pile][card.pileIndex];
+        if (!pile) {
+          return state;
+        }
+        const to = pile.at(-1)!;
+        const from = state.hand.cards[0];
+        if (!to || !from) {
+          return state;
+        }
+        if (card.pile === "foundation") {
+          if (state.hand.cards.length !== 1) {
+            return state;
+          }
+          if (to.suit !== from.suit) {
+            return state;
+          }
+          if (from.rank - to.rank !== 1) {
+            return state;
+          }
+        } else if (card.pile === "tableau") {
+          if (getColor(to) === getColor(from)) {
+            return state;
+          }
+
+          if (from.rank - to.rank !== -1) {
+            return state;
+          }
+        }
+        state.hand.cards.forEach((card) => {
+          card.isRevealed = true;
+        });
+        pile.push(...state.hand.cards.splice(0));
         return state;
       },
     });
@@ -244,6 +288,7 @@ const restart = (state: Solitaire.State) => {
 const dropzone = drawable<Solitaire.State>({
   x: 0,
   y: 0,
+  z: 1000,
   width: WIDTH,
   height: HEIGHT,
   onMouseUp({ state }) {
