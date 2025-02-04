@@ -131,21 +131,25 @@ const cards = SUITS.flatMap((suit) => {
             return state;
           }
         }
-        state.hand.cards.forEach((card) => {
-          card.isRevealed = true;
-        });
+        reveal(state);
         pile.push(...state.hand.cards.splice(0));
-        state.tableau.forEach((pile) => {
-          const top = pile.at(-1);
-          if (top) {
-            top.isRevealed = true;
-          }
-        });
         return state;
       },
     });
   });
 });
+
+const reveal = (state: Solitaire.State) => {
+  state.hand.cards.forEach((card) => {
+    card.isRevealed = true;
+  });
+  state.tableau.forEach((pile) => {
+    const top = pile.at(-1);
+    if (top) {
+      top.isRevealed = true;
+    }
+  });
+};
 
 const stock = Array.from({ length: 2 }).map((_, index) =>
   drawable<Solitaire.State>({
@@ -181,6 +185,18 @@ const foundation = Array.from({ length: 4 }).map((_, index) => {
     stroke: "white",
     radius: 5,
     lineWidth: 2,
+    onMouseUp({ state }) {
+      const card = state.hand.cards[0];
+      if (
+        state.foundation[index]?.length === 0 &&
+        state.hand.cards.length === 1 &&
+        card?.rank === ACE
+      ) {
+        reveal(state);
+        state.foundation[index].push(...state.hand.cards.splice(0));
+      }
+      return state;
+    },
   });
 });
 
@@ -193,6 +209,14 @@ const tableau = Array.from({ length: 7 }).map((_, index) => {
     stroke: "white",
     radius: 5,
     lineWidth: 2,
+    onMouseUp({ state }) {
+      const card = state.hand.cards[0];
+      if (state.tableau[index]?.length === 0 && card?.rank === KING) {
+        reveal(state);
+        state.tableau[index].push(...state.hand.cards.splice(0));
+      }
+      return state;
+    },
   });
 });
 
@@ -212,6 +236,26 @@ const getCard = (
           pileIndex,
           pile: "tableau",
           isRevealed: card.isRevealed,
+        };
+      }
+    }
+  }
+  for (const pile of state.foundation) {
+    for (const card of pile) {
+      if (card.rank === data.rank && card.suit === data.suit) {
+        const pileIndex = state.foundation.indexOf(pile);
+        const cardIndex = pile.indexOf(card);
+        return {
+          x:
+            (pileIndex + 1) * PADDING +
+            pileIndex * CARD_WIDTH +
+            PADDING * 3 +
+            CARD_WIDTH * 3,
+          y: PADDING,
+          cardIndex,
+          pileIndex,
+          pile: "foundation",
+          isRevealed: true,
         };
       }
     }
@@ -297,7 +341,7 @@ const dropzone = drawable<Solitaire.State>({
   height: HEIGHT,
   onMouseUp({ state }) {
     if (state.hand.pile !== "hand" && state.hand.pile !== "error") {
-      const pile = state[state.hand.pile][state.hand.pileIndex]?.push(
+      state[state.hand.pile][state.hand.pileIndex]?.push(
         ...state.hand.cards.splice(0)
       );
     }
