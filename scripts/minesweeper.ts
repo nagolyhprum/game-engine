@@ -1,7 +1,4 @@
 // TODO : MISSING
-// DEBUGGER
-// MAKE BACK CANVAS GO THROUGH ENGINE
-// PASS ENGINE TO EVENTS
 // TILEMAP
 // MAKE STATE IMMUTABLE
 
@@ -9,7 +6,7 @@ import { start, drawable, defaultState } from "../src/game/engine";
 import { ninePatch } from "../src/game/nine-patch";
 import { spritesheet } from "../src/game/spritesheet";
 
-import { Minesweeper } from "../src/types";
+import { Engine, Minesweeper } from "../src/types";
 import { shuffle } from "../src/utility";
 
 const TEXT_WIDTH = 100;
@@ -117,6 +114,7 @@ const restart = (state: Minesweeper.State) => {
 };
 
 const onClick = (
+  engine: Engine.Instance,
   cell: Minesweeper.Cell,
   state: Minesweeper.State,
   isRightClick = false
@@ -187,11 +185,11 @@ const cells = Array.from({ length: ROWS * COLUMNS }).map(
         column,
         row,
       },
-      onClick(state) {
-        return onClick(this, state, false);
+      onClick({ state, engine }) {
+        return onClick(engine, this, state, false);
       },
-      onContext(state) {
-        return onClick(this, state, true);
+      onContext({ state, engine }) {
+        return onClick(engine, this, state, true);
       },
     });
   }
@@ -307,7 +305,7 @@ const menu = drawable<Minesweeper.State>({
         }
         return "🙂";
       },
-      onClick(state) {
+      onClick({ state }) {
         return restart(state);
       },
     }),

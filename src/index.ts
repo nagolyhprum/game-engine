@@ -54,7 +54,7 @@ Bun.serve({
       const file = await fs.readFile(filePath);
       return new Response(file, {
         headers: {
-          "Content-Type": extensions[extension],
+          "Content-Type": extensions[extension] ?? "text/plain",
         },
       });
     }

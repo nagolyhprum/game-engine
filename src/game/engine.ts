@@ -2,7 +2,33 @@ import { Engine, Unknown } from "../types";
 
 export const start = <State extends Engine.GlobalState>(
   renderable: Engine.Config<State>
-): Engine.Instance => {
+) => {
+  const canvasMap: Record<
+    string,
+    {
+      canvas: HTMLCanvasElement;
+      context: CanvasRenderingContext2D;
+    }
+  > = {};
+  const engine: Engine.Instance = {
+    play(src, volume = 1) {
+      const audio = loadAudio(src);
+      audio.volume = volume;
+      audio.play();
+    },
+    getCanvas(id) {
+      const realID = id || "";
+      if (!(realID in canvasMap)) {
+        const canvas = document.createElement("canvas");
+        const context = canvas.getContext("2d")!;
+        canvasMap[realID] = {
+          canvas,
+          context,
+        };
+      }
+      return canvasMap[realID]!;
+    },
+  };
   if (typeof document !== "undefined") {
     const canvas = document.querySelector("canvas")!;
     const context = canvas.getContext("2d")!;
@@ -42,24 +68,18 @@ export const start = <State extends Engine.GlobalState>(
         name: "context",
       });
     };
-    render(renderable, context);
+    render(renderable, context, engine);
   }
-  return {
-    play(src, volume = 1) {
-      const audio = loadAudio(src);
-      audio.volume = volume;
-      audio.play();
-    },
-  };
 };
 
 const startAt = Date.now();
 let frames = 0;
 const render = <State extends Engine.GlobalState>(
   renderable: Engine.Config<State>,
-  context: CanvasRenderingContext2D
+  context: CanvasRenderingContext2D,
+  engine: Engine.Instance
 ) => {
-  requestAnimationFrame(() => render(renderable, context));
+  requestAnimationFrame(() => render(renderable, context, engine));
   const before = Date.now();
   renderable.state.now = before;
   renderable.state = drawAll({
@@ -68,6 +88,7 @@ const render = <State extends Engine.GlobalState>(
     state: renderable.state,
     signals: renderable.signals,
     debug: renderable.debug,
+    engine,
   });
   renderable.signals = [];
   context.textAlign = "right";
@@ -129,11 +150,12 @@ const drawAll = <State extends Engine.GlobalState, Data>({
   signals,
   state,
   debug,
+  engine,
 }: Engine.DrawAllConfig<State, Data>): State => {
   drawables.forEach((drawable) => {
     const draw = drawable.draw;
     if (draw) {
-      state = draw.call(drawable, { context, state, signals, debug });
+      state = draw.call(drawable, { context, state, signals, debug, engine });
     }
   });
   return state;
@@ -145,6 +167,7 @@ export const draw = <State extends Engine.GlobalState, Data>({
   signals,
   state,
   debug,
+  engine,
 }: Engine.DrawConfig<State, Data>) => {
   if (drawable.debug) {
     debugger;
@@ -173,7 +196,13 @@ export const draw = <State extends Engine.GlobalState, Data>({
           signal.y >= dy &&
           signal.y < dy + dh
         ) {
-          state = drawable.onClick(state);
+          state = drawable.onClick({
+            state,
+            context,
+            debug,
+            engine,
+            signals,
+          });
         }
       }
       if (signal.name === "context") {
@@ -184,7 +213,13 @@ export const draw = <State extends Engine.GlobalState, Data>({
           signal.y >= dy &&
           signal.y < dy + dh
         ) {
-          state = drawable.onContext(state);
+          state = drawable.onContext({
+            state,
+            context,
+            debug,
+            engine,
+            signals,
+          });
         }
       }
     });
@@ -213,6 +248,7 @@ export const draw = <State extends Engine.GlobalState, Data>({
         context,
         state,
         signals,
+        engine,
       });
     }
     if (debug) {
@@ -229,9 +265,10 @@ export const drawable = <State extends Engine.GlobalState, Data = Unknown>(
   config: Engine.WithOptionals<Engine.Drawable<State, Data>, Data>
 ): Engine.Drawable<State, Data> => {
   const parent: Engine.Drawable<State, Data> = {
-    draw({ context, state, signals, debug }) {
-      return draw({ drawable: this, context, state, signals, debug });
+    draw({ context, state, signals, debug, engine }) {
+      return draw({ drawable: this, context, state, signals, debug, engine });
     },
+    id: crypto.randomUUID(),
     ...config,
   };
   config.children?.forEach((child) => {

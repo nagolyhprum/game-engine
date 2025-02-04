@@ -1,8 +1,9 @@
 export type Unknown = any;
 
 export namespace Engine {
-  export type WithOptionals<Drawable, Data> = Omit<Drawable, "data"> & {
+  export type WithOptionals<Drawable, Data> = Omit<Drawable, "data" | "id"> & {
     data?: Data;
+    id?: string;
   };
 
   export interface GlobalState {
@@ -22,6 +23,7 @@ export namespace Engine {
     state: State;
     signals: Engine.Signal[];
     debug: boolean;
+    engine: Instance;
   }
 
   export interface DrawAllConfig<State extends GlobalState, Data>
@@ -35,6 +37,9 @@ export namespace Engine {
   }
 
   export interface DrawableDrawConfig<State extends GlobalState>
+    extends CommonDrawConfig<State> {}
+
+  export interface DrawableEventConfig<State extends GlobalState>
     extends CommonDrawConfig<State> {}
 
   export type Value<T, State extends GlobalState, Data> =
@@ -75,6 +80,7 @@ export namespace Engine {
   }
 
   export interface Drawable<State extends GlobalState, Data = unknown> {
+    id: string;
     debug?: boolean;
     x: Value<number, State, Data>;
     y: Value<number, State, Data>;
@@ -99,8 +105,14 @@ export namespace Engine {
     >;
     image?: Value<string, State, Data>;
     data?: Data;
-    onClick?: (this: Drawable<State, Data>, state: State) => State;
-    onContext?: (this: Drawable<State, Data>, state: State) => State;
+    onClick?: (
+      this: Drawable<State, Data>,
+      config: DrawableEventConfig<State>
+    ) => State;
+    onContext?: (
+      this: Drawable<State, Data>,
+      config: DrawableEventConfig<State>
+    ) => State;
     children?: Array<Drawable<State, Unknown>>;
     isMouseInBounds?: boolean;
     draw?: (
@@ -142,6 +154,10 @@ export namespace Engine {
 
   export interface Instance {
     play(src: string, volume?: number): void;
+    getCanvas(id: string | null | undefined): {
+      canvas: HTMLCanvasElement;
+      context: CanvasRenderingContext2D;
+    };
   }
 }
 
