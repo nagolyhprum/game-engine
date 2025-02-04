@@ -124,6 +124,10 @@ export namespace Engine {
       this: Drawable<State, Data>,
       config: DrawableEventConfig<State>
     ) => State;
+    onMouseDown?: (
+      this: Drawable<State, Data>,
+      config: DrawableEventConfig<State>
+    ) => State;
     onContext?: (
       this: Drawable<State, Data>,
       config: DrawableEventConfig<State>
@@ -139,17 +143,17 @@ export namespace Engine {
 
   export interface ClickSignal {
     name: "click";
-    x: number;
-    y: number;
   }
 
   export interface ContextSignal {
     name: "context";
-    x: number;
-    y: number;
   }
 
-  export type Signal = ClickSignal | ContextSignal;
+  export interface MouseDownSignal {
+    name: "mousedown";
+  }
+
+  export type Signal = ClickSignal | ContextSignal | MouseDownSignal;
 
   export interface Config<State extends GlobalState> {
     drawables: Array<Drawable<State, Unknown>>;

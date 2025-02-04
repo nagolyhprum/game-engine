@@ -45,8 +45,14 @@ export const start = <State extends Engine.GlobalState>(
       renderable.state.mouse.location.x = event.offsetX;
       renderable.state.mouse.location.y = event.offsetY;
     };
-    canvas.onmousedown = () => {
+    canvas.onmousedown = (event) => {
       renderable.state.mouse.leftIsDown = true;
+      event.preventDefault();
+      event.stopPropagation();
+      renderable.signals.push({
+        name: "mousedown",
+      });
+      return false;
     };
     canvas.onmouseup = () => {
       renderable.state.mouse.leftIsDown = false;
@@ -66,8 +72,6 @@ export const start = <State extends Engine.GlobalState>(
       event.preventDefault();
       event.stopPropagation();
       renderable.signals.push({
-        x: event.offsetX,
-        y: event.offsetY,
         name: "click",
       });
       return false;
@@ -76,8 +80,6 @@ export const start = <State extends Engine.GlobalState>(
       event.preventDefault();
       event.stopPropagation();
       renderable.signals.push({
-        x: event.offsetX,
-        y: event.offsetY,
         name: "context",
       });
       return false;
@@ -211,13 +213,7 @@ export const draw = <State extends Engine.GlobalState, Data>({
       sh = getValue(source?.height, state, drawable);
     signals.forEach((signal) => {
       if (signal.name === "click") {
-        if (
-          drawable.onClick &&
-          signal.x >= dx &&
-          signal.x < dx + dw &&
-          signal.y >= dy &&
-          signal.y < dy + dh
-        ) {
+        if (drawable.onClick && drawable.isMouseInBounds) {
           state = drawable.onClick({
             state,
             context,
@@ -228,14 +224,19 @@ export const draw = <State extends Engine.GlobalState, Data>({
         }
       }
       if (signal.name === "context") {
-        if (
-          drawable.onContext &&
-          signal.x >= dx &&
-          signal.x < dx + dw &&
-          signal.y >= dy &&
-          signal.y < dy + dh
-        ) {
+        if (drawable.onContext && drawable.isMouseInBounds) {
           state = drawable.onContext({
+            state,
+            context,
+            debug,
+            engine,
+            signals,
+          });
+        }
+      }
+      if (signal.name === "mousedown") {
+        if (drawable.onMouseDown && drawable.isMouseInBounds) {
+          state = drawable.onMouseDown({
             state,
             context,
             debug,

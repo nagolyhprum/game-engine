@@ -14,8 +14,9 @@ const HEARTS = "Hearts";
 const DIAMONDS = "Diamond";
 const SPADES = "Spades";
 const PADDING = 5;
+const CARD_PEEK = 0.2;
 const WIDTH = PADDING * 8 + CARD_WIDTH * 7;
-const HEIGHT = CARD_HEIGHT + (13 + 6) * CARD_HEIGHT * 0.2;
+const HEIGHT = CARD_HEIGHT + (13 + 6) * CARD_HEIGHT * CARD_PEEK;
 
 const SUITS: Solitaire.Suit[] = [CLUBS, DIAMONDS, HEARTS, SPADES];
 const RANKS: Solitaire.Rank[] = [
@@ -61,6 +62,14 @@ const cards = SUITS.flatMap((suit) => {
           ? `/public/solitaire/${this.data.suit} ${this.data.rank}.png`
           : `/public/solitaire/Back Blue 1.png`;
       },
+      onMouseDown({ state }) {
+        const card = getCard(state, this.data);
+        if (card.isRevealed) {
+          console.log(card, this.data);
+          // put that card and every card over it in your hand
+        }
+        return state;
+      },
     });
   });
 });
@@ -75,12 +84,14 @@ const stock = Array.from({ length: 2 }).map((_, index) =>
     radius: 5,
     lineWidth: 2,
     onClick({ state }) {
-      const top = state.stock[0]?.pop();
-      if (top) {
-        state.stock[1]?.push(top);
-      } else {
-        state.stock[0] = state.stock[1]?.reverse()!;
-        state.stock[1] = [];
+      if (index === 0) {
+        const top = state.stock[0]?.pop();
+        if (top) {
+          state.stock[1]?.push(top);
+        } else {
+          state.stock[0] = state.stock[1]?.reverse()!;
+          state.stock[1] = [];
+        }
       }
       return state;
     },
@@ -129,7 +140,7 @@ const getCard = (
         const cardIndex = pile.indexOf(card);
         return {
           x: (pileIndex + 1) * PADDING + pileIndex * CARD_WIDTH,
-          y: 2 * PADDING + CARD_HEIGHT + cardIndex * CARD_HEIGHT * 0.2,
+          y: 2 * PADDING + CARD_HEIGHT + cardIndex * CARD_HEIGHT * CARD_PEEK,
           index: cardIndex,
           pile: "tableau",
           isRevealed: card.isRevealed,
