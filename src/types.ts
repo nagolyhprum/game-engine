@@ -17,6 +17,26 @@ export namespace Engine {
     };
   }
 
+  export interface CommonDrawConfig<State extends GlobalState> {
+    context: CanvasRenderingContext2D;
+    state: State;
+    signals: Engine.Signal[];
+    debug: boolean;
+  }
+
+  export interface DrawAllConfig<State extends GlobalState, Data>
+    extends CommonDrawConfig<State> {
+    drawables: Array<Engine.Drawable<State, Data>>;
+  }
+
+  export interface DrawConfig<State extends GlobalState, Data>
+    extends CommonDrawConfig<State> {
+    drawable: Engine.Drawable<State, Data>;
+  }
+
+  export interface DrawableDrawConfig<State extends GlobalState>
+    extends CommonDrawConfig<State> {}
+
   export type Value<T, State extends GlobalState, Data> =
     | T
     | null
@@ -85,9 +105,7 @@ export namespace Engine {
     isMouseInBounds?: boolean;
     draw?: (
       this: Drawable<State, Data>,
-      context: CanvasRenderingContext2D,
-      state: State,
-      signals: Engine.Signal[]
+      config: DrawableDrawConfig<State>
     ) => State;
     parent?: Drawable<State, Unknown>;
   }
@@ -119,6 +137,7 @@ export namespace Engine {
     height: number;
     state: State;
     signals: Signal[];
+    debug: boolean;
   }
 
   export interface Instance {

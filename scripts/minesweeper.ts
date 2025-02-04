@@ -1,5 +1,7 @@
 // TODO : MISSING
 // DEBUGGER
+// MAKE BACK CANVAS GO THROUGH ENGINE
+// PASS ENGINE TO EVENTS
 // TILEMAP
 // MAKE STATE IMMUTABLE
 
@@ -300,7 +302,7 @@ const menu = drawable<Minesweeper.State>({
         if (winState === "lose") {
           return "😵";
         }
-        if (state.mouse.leftIsDown) {
+        if (state.mouse.leftIsDown && state.mouse.location.y > MENU_HEIGHT) {
           return "😮";
         }
         return "🙂";
@@ -350,4 +352,5 @@ const engine = start<Minesweeper.State>({
   }),
   signals: [],
   drawables: [menu, ...cells],
+  debug: true,
 });

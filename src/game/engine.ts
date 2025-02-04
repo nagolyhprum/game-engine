@@ -53,19 +53,36 @@ export const start = <State extends Engine.GlobalState>(
   };
 };
 
+const startAt = Date.now();
+let frames = 0;
 const render = <State extends Engine.GlobalState>(
   renderable: Engine.Config<State>,
   context: CanvasRenderingContext2D
 ) => {
   requestAnimationFrame(() => render(renderable, context));
-  renderable.state.now = Date.now();
-  renderable.state = drawAll(
-    renderable.drawables as Engine.Drawable<State, unknown>[],
+  const before = Date.now();
+  renderable.state.now = before;
+  renderable.state = drawAll({
+    drawables: renderable.drawables as Engine.Drawable<State, unknown>[],
     context,
-    renderable.state,
-    renderable.signals
-  );
+    state: renderable.state,
+    signals: renderable.signals,
+    debug: renderable.debug,
+  });
   renderable.signals = [];
+  context.textAlign = "right";
+  context.textBaseline = "bottom";
+  context.font = "24px Courier New";
+  if (renderable.debug) {
+    frames++;
+    const fps = Math.floor(frames / ((before - startAt) / 1000));
+    context.fillStyle = "red";
+    context.fillText(
+      `${fps}`,
+      context.canvas.width - 5,
+      context.canvas.height - 5
+    );
+  }
 };
 
 const audioCache: Record<string, HTMLAudioElement> = {};
@@ -106,27 +123,29 @@ const loadImage = <State extends Engine.GlobalState, Data>(
   return imageCache[src];
 };
 
-const drawAll = <State extends Engine.GlobalState, Data>(
-  drawables: Array<Engine.Drawable<State, Data>>,
-  context: CanvasRenderingContext2D,
-  state: State,
-  signals: Engine.Signal[]
-): State => {
+const drawAll = <State extends Engine.GlobalState, Data>({
+  context,
+  drawables,
+  signals,
+  state,
+  debug,
+}: Engine.DrawAllConfig<State, Data>): State => {
   drawables.forEach((drawable) => {
     const draw = drawable.draw;
     if (draw) {
-      state = draw.call(drawable, context, state, signals);
+      state = draw.call(drawable, { context, state, signals, debug });
     }
   });
   return state;
 };
 
-export const draw = <State extends Engine.GlobalState, Data>(
-  drawable: Engine.Drawable<State, Data>,
-  context: CanvasRenderingContext2D,
-  state: State,
-  signals: Engine.Signal[]
-) => {
+export const draw = <State extends Engine.GlobalState, Data>({
+  context,
+  drawable,
+  signals,
+  state,
+  debug,
+}: Engine.DrawConfig<State, Data>) => {
   if (drawable.debug) {
     debugger;
   }
@@ -187,7 +206,21 @@ export const draw = <State extends Engine.GlobalState, Data>(
       context.fillStyle = getValue(drawable.color, state, drawable) ?? "";
       context.fillText(text, dx + dw / 2, dy + dh / 2);
     }
-    state = drawAll(drawable.children ?? [], context, state, signals);
+    if (drawable.children) {
+      state = drawAll({
+        drawables: drawable.children,
+        debug,
+        context,
+        state,
+        signals,
+      });
+    }
+    if (debug) {
+      context.strokeStyle = "red";
+      context.beginPath();
+      context.rect(dx, dy, dw, dh);
+      context.stroke();
+    }
   }
   return state;
 };
@@ -196,12 +229,8 @@ export const drawable = <State extends Engine.GlobalState, Data = Unknown>(
   config: Engine.WithOptionals<Engine.Drawable<State, Data>, Data>
 ): Engine.Drawable<State, Data> => {
   const parent: Engine.Drawable<State, Data> = {
-    draw(
-      context: CanvasRenderingContext2D,
-      state: State,
-      signals: Engine.Signal[]
-    ) {
-      return draw(this, context, state, signals);
+    draw({ context, state, signals, debug }) {
+      return draw({ drawable: this, context, state, signals, debug });
     },
     ...config,
   };

@@ -23,7 +23,7 @@ export const ninePatch = <State extends Engine.GlobalState, Data = unknown>(
   const { canvas: backCanvas, context: backContext } = getCanvas();
   return drawable({
     ...config,
-    draw(context, state, signals) {
+    draw({ context, state, signals, debug }) {
       if (backCanvas && backContext) {
         const ninePatch = getValue(config.ninePatch, state, this);
         const sourceEdge = getValue(ninePatch?.sourceEdge, state, this) ?? 0;
@@ -35,7 +35,13 @@ export const ninePatch = <State extends Engine.GlobalState, Data = unknown>(
           y = getValue(this.y, state, this) ?? 0,
           width = getValue(this.width, state, this) ?? 0,
           height = getValue(this.height, state, this) ?? 0;
-        state = draw(this, backContext, state, signals);
+        state = draw({
+          drawable: this,
+          context: backContext,
+          state,
+          signals,
+          debug,
+        });
         const sourceColumns = [
           0,
           sourceEdge,
