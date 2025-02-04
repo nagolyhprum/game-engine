@@ -13,10 +13,11 @@ export namespace Engine {
 
   export type DrawableWithOptionals<State extends GlobalState, Data> = Omit<
     Drawable<State, Data>,
-    "data" | "id"
+    "data" | "id" | "bounds"
   > & {
     data?: Data;
     id?: string;
+    bounds?: Rect;
   };
 
   export interface GlobalState {
@@ -90,6 +91,13 @@ export namespace Engine {
     spritesheet: Value<SpritesheetSource<State, Data>, State, Data>;
   }
 
+  export interface Rect {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+  }
+
   export interface Drawable<State extends GlobalState, Data = unknown> {
     id: string;
     debug?: boolean;
@@ -108,6 +116,7 @@ export namespace Engine {
     color?: Value<string, State, Data>;
     visible?: Value<boolean, State, Data>;
     font?: Value<string, State, Data>;
+    bounds: Rect;
     source?: Value<
       {
         x: Value<number, State, Data>;
@@ -207,14 +216,16 @@ export namespace Solitaire {
     isRevealed: boolean;
   }
 
+  export type Pile = "stock" | "tableau" | "foundation" | "hand" | "error";
+
   export interface State extends Engine.GlobalState {
     stock: CardState[][];
     tableau: CardState[][];
     foundation: CardState[][];
     hand: {
       cards: CardState[];
-      pile: string;
-      index: number;
+      pile: Pile;
+      pileIndex: number;
     };
   }
 
@@ -224,5 +235,14 @@ export namespace Solitaire {
   export interface CardData {
     suit: Suit;
     rank: Rank;
+  }
+
+  export interface CardStats {
+    pile: Pile;
+    pileIndex: number;
+    x: number;
+    y: number;
+    cardIndex: number;
+    isRevealed: boolean;
   }
 }

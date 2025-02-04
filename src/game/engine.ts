@@ -203,6 +203,10 @@ export const draw = <State extends Engine.GlobalState, Data>({
       dy = getValue(drawable.y, state, drawable) ?? 0,
       dw = getValue(drawable.width, state, drawable) ?? 0,
       dh = getValue(drawable.height, state, drawable) ?? 0;
+    drawable.bounds.x = dx;
+    drawable.bounds.y = dy;
+    drawable.bounds.width = dw;
+    drawable.bounds.height = dh;
     const mouse = state.mouse.location;
     drawable.isMouseInBounds =
       mouse.x >= dx && mouse.x < dx + dw && mouse.y >= dy && mouse.y < dy + dh;
@@ -308,6 +312,12 @@ export const drawable = <State extends Engine.GlobalState, Data = Unknown>(
     },
     data: config.data!,
     id: crypto.randomUUID(),
+    bounds: {
+      x: 0,
+      y: 0,
+      width: 0,
+      height: 0,
+    },
     ...config,
   };
   config.children?.forEach((child) => {

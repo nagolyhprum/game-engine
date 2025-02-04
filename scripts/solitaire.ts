@@ -14,7 +14,7 @@ const HEARTS = "Hearts";
 const DIAMONDS = "Diamond";
 const SPADES = "Spades";
 const PADDING = 5;
-const CARD_PEEK = 0.2;
+const CARD_PEEK = 0.35;
 const WIDTH = PADDING * 8 + CARD_WIDTH * 7;
 const HEIGHT = CARD_HEIGHT + (13 + 6) * CARD_HEIGHT * CARD_PEEK;
 
@@ -54,7 +54,10 @@ const cards = SUITS.flatMap((suit) => {
       },
       z(state) {
         const card = getCard(state, this.data);
-        return card.index;
+        if (card.pile === "hand") {
+          return 100 + card.cardIndex;
+        }
+        return card.cardIndex;
       },
       image(state) {
         const card = getCard(state, this.data);
@@ -64,9 +67,24 @@ const cards = SUITS.flatMap((suit) => {
       },
       onMouseDown({ state }) {
         const card = getCard(state, this.data);
-        if (card.isRevealed) {
-          console.log(card, this.data);
-          // put that card and every card over it in your hand
+        if (card.pile !== "hand" && card.pile !== "error") {
+          const pile = state[card.pile][card.pileIndex];
+          if (pile) {
+            const threshold =
+              card.cardIndex + 1 === pile.length
+                ? CARD_HEIGHT
+                : CARD_HEIGHT * CARD_PEEK;
+            if (
+              pile &&
+              card.isRevealed &&
+              state.mouse.location.y - this.bounds.y <= threshold
+            ) {
+              const grabbed = pile.splice(card.cardIndex);
+              state.hand.cards = grabbed;
+              state.hand.pile = card.pile;
+              state.hand.pileIndex = card.pileIndex;
+            }
+          }
         }
         return state;
       },
@@ -126,13 +144,7 @@ const tableau = Array.from({ length: 7 }).map((_, index) => {
 const getCard = (
   state: Solitaire.State,
   data: Solitaire.CardData
-): {
-  pile: string;
-  x: number;
-  y: number;
-  index: number;
-  isRevealed: boolean;
-} => {
+): Solitaire.CardStats => {
   for (const pile of state.tableau) {
     for (const card of pile) {
       if (card.rank === data.rank && card.suit === data.suit) {
@@ -141,9 +153,10 @@ const getCard = (
         return {
           x: (pileIndex + 1) * PADDING + pileIndex * CARD_WIDTH,
           y: 2 * PADDING + CARD_HEIGHT + cardIndex * CARD_HEIGHT * CARD_PEEK,
-          index: cardIndex,
+          cardIndex,
+          pileIndex,
           pile: "tableau",
-          isRevealed: card.isRevealed,
+          isRevealed: true, // card.isRevealed,
         };
       }
     }
@@ -156,9 +169,26 @@ const getCard = (
         return {
           x: (pileIndex + 1) * PADDING + pileIndex * CARD_WIDTH,
           y: PADDING,
-          index: cardIndex,
+          cardIndex,
+          pileIndex,
           pile: "stock",
           isRevealed: pileIndex === 1,
+        };
+      }
+    }
+    for (const card of state.hand.cards) {
+      if (card.rank === data.rank && card.suit === data.suit) {
+        const cardIndex = state.hand.cards.indexOf(card);
+        return {
+          x: state.mouse.location.x - CARD_WIDTH / 2,
+          y:
+            state.mouse.location.y -
+            (CARD_HEIGHT * CARD_PEEK) / 2 +
+            CARD_HEIGHT * CARD_PEEK * cardIndex,
+          cardIndex,
+          pileIndex: 0,
+          pile: "hand",
+          isRevealed: true,
         };
       }
     }
@@ -166,7 +196,8 @@ const getCard = (
   return {
     x: 0,
     y: HEIGHT - CARD_HEIGHT,
-    index: 0,
+    cardIndex: 0,
+    pileIndex: 0,
     pile: "error",
     isRevealed: true,
   };
@@ -177,8 +208,8 @@ const restart = (state: Solitaire.State) => {
   state.tableau = Array.from({ length: 7 }).map(() => []);
   state.stock = Array.from({ length: 2 }).map(() => []);
   state.hand.cards = [];
-  state.hand.index = -1;
-  state.hand.pile = "";
+  state.hand.pileIndex = -1;
+  state.hand.pile = "hand";
   const deck = shuffle(
     SUITS.flatMap((suit) =>
       RANKS.map((rank) => ({
@@ -199,6 +230,7 @@ const restart = (state: Solitaire.State) => {
   state.stock[0] = deck;
   const top = deck.pop()!;
   state.stock[1]?.push(top);
+
   return state;
 };
 
@@ -213,8 +245,8 @@ start<Solitaire.State>({
     tableau: [],
     hand: {
       cards: [],
-      pile: "",
-      index: -1,
+      pile: "hand",
+      pileIndex: -1,
     },
   }),
   background: "green",
