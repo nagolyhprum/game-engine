@@ -3,6 +3,7 @@ import path from "path";
 import { URL } from "url";
 import { Game } from "./types";
 
+import "../scripts/supaplex";
 import "../scripts/minesweeper";
 import "../scripts/solitaire";
 
@@ -17,6 +18,10 @@ const games = [
     name: "Solitaire",
     slug: "solitaire",
   },
+  {
+    name: "Supaplex Maker",
+    slug: "supaplex",
+  },
 ];
 
 const indexResponse = `<!doctype html>
@@ -25,6 +30,7 @@ const indexResponse = `<!doctype html>
       <style>
         canvas {
           background : black;
+          outline : none;
         }
       </style>
     </head>

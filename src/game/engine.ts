@@ -41,6 +41,39 @@ export const start = <State extends Engine.GlobalState>(
     canvas.width = renderable.width;
     canvas.height = renderable.height;
     // TODO : MAKE THESE EVENTS BETTER
+    canvas.tabIndex = 0;
+    canvas.focus();
+    const keydown: Record<string, boolean> = {};
+    canvas.onkeydown = (event) => {
+      const key = event.key;
+      event.preventDefault();
+      event.stopPropagation();
+      if (!keydown[key]) {
+        keydown[key] = true;
+        renderable.signals.push({
+          name: "keydown",
+          data: {
+            key,
+          },
+        });
+      }
+      return false;
+    };
+    canvas.onkeyup = (event) => {
+      const key = event.key;
+      event.preventDefault();
+      event.stopPropagation();
+      if (keydown[key]) {
+        keydown[key] = false;
+        renderable.signals.push({
+          name: "keyup",
+          data: {
+            key,
+          },
+        });
+      }
+      return false;
+    };
     canvas.onmousemove = (event) => {
       renderable.state.mouse.location.x = event.offsetX;
       renderable.state.mouse.location.y = event.offsetY;
@@ -222,6 +255,26 @@ export const draw = <State extends Engine.GlobalState, Data>({
       sw = getValue(source?.width, state, drawable),
       sh = getValue(source?.height, state, drawable);
     signals.forEach((signal) => {
+      if (signal.name === "keydown" && drawable.onKeyDown) {
+        drawable.onKeyDown({
+          state,
+          context,
+          debug,
+          engine,
+          signals,
+          data: signal.data,
+        });
+      }
+      if (signal.name === "keyup" && drawable.onKeyUp) {
+        drawable.onKeyUp({
+          state,
+          context,
+          debug,
+          engine,
+          signals,
+          data: signal.data,
+        });
+      }
       if (drawable.isMouseInBounds) {
         if (signal.name === "click" && drawable.onClick) {
           state = drawable.onClick({
@@ -230,6 +283,7 @@ export const draw = <State extends Engine.GlobalState, Data>({
             debug,
             engine,
             signals,
+            data: null,
           });
         }
         if (signal.name === "context" && drawable.onContext) {
@@ -239,6 +293,7 @@ export const draw = <State extends Engine.GlobalState, Data>({
             debug,
             engine,
             signals,
+            data: null,
           });
         }
         if (signal.name === "mousedown" && drawable.onMouseDown) {
@@ -248,6 +303,7 @@ export const draw = <State extends Engine.GlobalState, Data>({
             debug,
             engine,
             signals,
+            data: null,
           });
         }
         if (signal.name === "mouseup" && drawable.onMouseUp) {
@@ -257,6 +313,7 @@ export const draw = <State extends Engine.GlobalState, Data>({
             debug,
             engine,
             signals,
+            data: null,
           });
         }
       }

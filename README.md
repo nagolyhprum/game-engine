@@ -32,6 +32,10 @@ Solitaire
 
 - https://opengameart.org/content/cards-set
 
+Supaplex
+
+- https://www.supaplex.online/
+
 # Ideas
 
 - Solitaire

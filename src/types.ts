@@ -53,8 +53,10 @@ export namespace Engine {
   export interface DrawableDrawConfig<State extends GlobalState>
     extends CommonDrawConfig<State> {}
 
-  export interface DrawableEventConfig<State extends GlobalState>
-    extends CommonDrawConfig<State> {}
+  export interface DrawableEventConfig<State extends GlobalState, EventData>
+    extends CommonDrawConfig<State> {
+    data: EventData;
+  }
 
   export type Value<T, State extends GlobalState, Data> =
     | T
@@ -98,6 +100,10 @@ export namespace Engine {
     height: number;
   }
 
+  export interface KeyEventData {
+    key: string;
+  }
+
   export interface Drawable<State extends GlobalState, Data = unknown> {
     id: string;
     debug?: boolean;
@@ -129,21 +135,29 @@ export namespace Engine {
     >;
     image?: Value<string, State, Data>;
     data: Data;
+    onKeyDown?: (
+      this: Drawable<State, Data>,
+      config: DrawableEventConfig<State, KeyEventData>
+    ) => State;
+    onKeyUp?: (
+      this: Drawable<State, Data>,
+      config: DrawableEventConfig<State, KeyEventData>
+    ) => State;
     onClick?: (
       this: Drawable<State, Data>,
-      config: DrawableEventConfig<State>
+      config: DrawableEventConfig<State, unknown>
     ) => State;
     onMouseUp?: (
       this: Drawable<State, Data>,
-      config: DrawableEventConfig<State>
+      config: DrawableEventConfig<State, unknown>
     ) => State;
     onMouseDown?: (
       this: Drawable<State, Data>,
-      config: DrawableEventConfig<State>
+      config: DrawableEventConfig<State, unknown>
     ) => State;
     onContext?: (
       this: Drawable<State, Data>,
-      config: DrawableEventConfig<State>
+      config: DrawableEventConfig<State, unknown>
     ) => State;
     children?: Array<Drawable<State, Unknown>>;
     isMouseInBounds?: boolean;
@@ -170,11 +184,27 @@ export namespace Engine {
     name: "mouseup";
   }
 
+  export interface KeyDownSignal {
+    name: "keydown";
+    data: {
+      key: string;
+    };
+  }
+
+  export interface KeyUpSignal {
+    name: "keyup";
+    data: {
+      key: string;
+    };
+  }
+
   export type Signal =
     | ClickSignal
     | ContextSignal
     | MouseDownSignal
-    | MouseUpSignal;
+    | MouseUpSignal
+    | KeyDownSignal
+    | KeyUpSignal;
 
   export interface Config<State extends GlobalState> {
     drawables: Array<Drawable<State, Unknown>>;
@@ -256,5 +286,18 @@ export namespace Solitaire {
     y: number;
     cardIndex: number;
     isRevealed: boolean;
+  }
+}
+
+export namespace Supaplex {
+  export type Direction = "up" | "right" | "down" | "left";
+
+  export interface State extends Engine.GlobalState {
+    murphy: {
+      row: number;
+      column: number;
+      direction: Direction;
+      lastMovedAt: number;
+    };
   }
 }

@@ -1,7 +1,7 @@
-// DROP FOUNDATION
-// ALLOW EMPTY PILES TO TAKE KINGS
 // TIMER
 // SCORE
+// FIX BUG WITH GRABBING THE STOCK
+// IMPROVE CLICKING - REDUCE FLICKER - SIMPLIFY CODE
 
 import { defaultState, drawable, start } from "../src/game/engine";
 import { Solitaire } from "../src/types";
