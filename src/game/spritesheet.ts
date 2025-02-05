@@ -13,12 +13,13 @@ export const spritesheet = <State extends Engine.GlobalState, Data = unknown>(
       const height = getValue(spritesheet?.height, state, this) ?? 0;
       const column = getValue(spritesheet?.column, state, this) ?? 0;
       const row = getValue(spritesheet?.row, state, this) ?? 0;
+      const padding = getValue(spritesheet?.padding, state, this) ?? 0;
       return spritesheet
         ? {
-            x: column * width,
-            y: row * height,
-            width,
-            height,
+            x: column * width + padding,
+            y: row * height + padding,
+            width: width - 2 * padding,
+            height: height - 2 * padding,
           }
         : {
             x: 0,

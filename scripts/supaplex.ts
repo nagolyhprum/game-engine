@@ -7,16 +7,16 @@
 // * Collision detection
 // * Rolling bombs
 
-import { defaultState, start } from "../src/game/engine";
+import { defaultState, drawable, start } from "../src/game/engine";
 import { spritesheet } from "../src/game/spritesheet";
 import { Supaplex } from "../src/types";
 
 const ROWS = 10;
 const COLUMNS = 10;
 const CELL_SIZE = 50;
-
 const IDLE_AT = 600;
 const MOVE_SPEED = 300;
+const IMAGE_PADDING = 50;
 
 const MOVE: Record<
   Supaplex.Direction,
@@ -83,7 +83,7 @@ const murphy = spritesheet<Supaplex.State>({
   width: CELL_SIZE,
   height: CELL_SIZE,
   image: "/public/supaplex/murphy.png",
-  background: "blue",
+  background: "black",
   spritesheet: (state) => {
     const diff = state.now - state.murphy.lastMovedAt;
     const isIdle = diff >= IDLE_AT;
@@ -105,30 +105,42 @@ const murphy = spritesheet<Supaplex.State>({
       row: coordinate.row,
       width: 6144 / 16,
       height: 1920 / 5,
+      padding: IMAGE_PADDING,
     };
   },
   onKeyDown({ state, data }) {
-    switch (data.key) {
-      case "ArrowUp":
-        state.murphy.row--;
-        state.murphy.direction = "up";
-        state.murphy.lastMovedAt = state.now;
-        break;
-      case "ArrowRight":
-        state.murphy.column++;
-        state.murphy.direction = "right";
-        state.murphy.lastMovedAt = state.now;
-        break;
-      case "ArrowDown":
-        state.murphy.row++;
-        state.murphy.direction = "down";
-        state.murphy.lastMovedAt = state.now;
-        break;
-      case "ArrowLeft":
-        state.murphy.column--;
-        state.murphy.direction = "left";
-        state.murphy.lastMovedAt = state.now;
-        break;
+    const isMoving = state.now - state.murphy.lastMovedAt < MOVE_SPEED;
+    if (!isMoving) {
+      switch (data.key) {
+        case "ArrowUp":
+          if (state.murphy.row > 0) {
+            state.murphy.row--;
+            state.murphy.direction = "up";
+            state.murphy.lastMovedAt = state.now;
+          }
+          break;
+        case "ArrowRight":
+          if (state.murphy.column + 1 < COLUMNS) {
+            state.murphy.column++;
+            state.murphy.direction = "right";
+            state.murphy.lastMovedAt = state.now;
+          }
+          break;
+        case "ArrowDown":
+          if (state.murphy.row + 1 < ROWS) {
+            state.murphy.row++;
+            state.murphy.direction = "down";
+            state.murphy.lastMovedAt = state.now;
+          }
+          break;
+        case "ArrowLeft":
+          if (state.murphy.column > 0) {
+            state.murphy.column--;
+            state.murphy.direction = "left";
+            state.murphy.lastMovedAt = state.now;
+          }
+          break;
+      }
     }
     return state;
   },
@@ -138,8 +150,79 @@ const murphy = spritesheet<Supaplex.State>({
   },
 });
 
+const chip = drawable<Supaplex.State>({
+  x: 0,
+  y: 0,
+  width: CELL_SIZE,
+  height: CELL_SIZE,
+  background: "green",
+  children: [
+    spritesheet({
+      x: 0,
+      y: 0,
+      width: CELL_SIZE,
+      height: CELL_SIZE,
+      image: "/public/supaplex/chip.png",
+      spritesheet: {
+        padding: IMAGE_PADDING,
+        width: 2688 / 7,
+        height: 1152 / 3,
+        row: 0,
+        column: 0,
+      },
+    }),
+    spritesheet({
+      x: 0,
+      y: 0,
+      width: CELL_SIZE,
+      height: CELL_SIZE,
+      image: "/public/supaplex/chip.png",
+      spritesheet: {
+        padding: IMAGE_PADDING,
+        width: 2688 / 7,
+        height: 1152 / 3,
+        row: 1,
+        column: 0,
+      },
+    }),
+  ],
+});
+
+const tiles = drawable<Supaplex.State>({
+  x: 0,
+  y: 0,
+  draw(config) {
+    const { state, context } = config;
+    state.tiles.forEach((row, rowIndex) => {
+      row.forEach((column, columnIndex) => {
+        context.save();
+        context.translate(columnIndex * CELL_SIZE, rowIndex * CELL_SIZE);
+        switch (column.type) {
+          case "chip":
+            chip.draw?.(config);
+            break;
+          case "empty":
+            break;
+        }
+        context.restore();
+      });
+    });
+    return state;
+  },
+  onUpdate({ state }) {
+    const isMoving = state.now - state.murphy.lastMovedAt < MOVE_SPEED;
+    if (!isMoving) {
+      const tile = state.tiles[state.murphy.row]?.[state.murphy.column];
+      if (tile?.type === "chip") {
+        tile.type = "empty";
+      }
+    }
+    return state;
+  },
+});
+
 start<Supaplex.State>({
-  drawables: [murphy],
+  drawables: [tiles, murphy],
   height: CELL_SIZE * ROWS,
   width: CELL_SIZE * COLUMNS,
   state: {
@@ -150,5 +233,13 @@ start<Supaplex.State>({
       direction: "down",
       lastMovedAt: 0,
     },
+    tiles: Array.from({ length: ROWS }).map((_, row) =>
+      Array.from({
+        length: COLUMNS,
+      }).map((_, column) => ({
+        type: column || row ? "chip" : "empty",
+      }))
+    ),
   },
+  debug: true,
 });

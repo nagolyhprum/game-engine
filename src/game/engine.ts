@@ -127,6 +127,31 @@ export const start = <State extends Engine.GlobalState>(
   }
 };
 
+const update = <State extends Engine.GlobalState>({
+  state,
+  drawables,
+  engine,
+  signals,
+}: {
+  state: State;
+  drawables: Array<Engine.Drawable<State, unknown>>;
+  engine: Engine.Instance;
+  signals: Engine.Signal[];
+}): State => {
+  return drawables.reduce((state, drawable) => {
+    state =
+      drawable.onUpdate?.({
+        data: null,
+        signals,
+        state,
+        engine,
+      }) ?? state;
+    state = processSignals(drawable, signals, engine, state);
+    // RUN MOUSE AND KEY STUFF
+    return state;
+  }, state);
+};
+
 const startAt = Date.now();
 let frames = 0;
 const render = <State extends Engine.GlobalState>(
@@ -139,13 +164,18 @@ const render = <State extends Engine.GlobalState>(
   renderable.state.now = before;
   context.fillStyle = renderable.background ?? "black";
   context.fillRect(0, 0, context.canvas.width, context.canvas.height);
-  renderable.state = drawAll({
+  drawAll({
     drawables: renderable.drawables as Engine.Drawable<State, unknown>[],
     context,
     state: renderable.state,
-    signals: renderable.signals,
     debug: renderable.debug,
     engine,
+  });
+  renderable.state = renderable.state = update({
+    state: renderable.state,
+    drawables: renderable.drawables as Engine.Drawable<State, unknown>[],
+    engine,
+    signals: renderable.signals,
   });
   renderable.signals = [];
   context.textAlign = "right";
@@ -161,6 +191,67 @@ const render = <State extends Engine.GlobalState>(
       context.canvas.height - 5
     );
   }
+};
+
+const processSignals = <State extends Engine.GlobalState>(
+  drawable: Engine.Drawable<State, unknown>,
+  signals: Engine.Signal[],
+  engine: Engine.Instance,
+  state: State
+): State => {
+  signals.forEach((signal) => {
+    if (signal.name === "keydown" && drawable.onKeyDown) {
+      drawable.onKeyDown({
+        state,
+        engine,
+        signals,
+        data: signal.data,
+      });
+    }
+    if (signal.name === "keyup" && drawable.onKeyUp) {
+      drawable.onKeyUp({
+        state,
+        engine,
+        signals,
+        data: signal.data,
+      });
+    }
+    if (drawable.isMouseInBounds) {
+      if (signal.name === "click" && drawable.onClick) {
+        state = drawable.onClick({
+          state,
+          engine,
+          signals,
+          data: null,
+        });
+      }
+      if (signal.name === "context" && drawable.onContext) {
+        state = drawable.onContext({
+          state,
+          engine,
+          signals,
+          data: null,
+        });
+      }
+      if (signal.name === "mousedown" && drawable.onMouseDown) {
+        state = drawable.onMouseDown({
+          state,
+          engine,
+          signals,
+          data: null,
+        });
+      }
+      if (signal.name === "mouseup" && drawable.onMouseUp) {
+        state = drawable.onMouseUp({
+          state,
+          engine,
+          signals,
+          data: null,
+        });
+      }
+    }
+  });
+  return state;
 };
 
 const audioCache: Record<string, HTMLAudioElement> = {};
@@ -204,11 +295,10 @@ const loadImage = <State extends Engine.GlobalState, Data>(
 const drawAll = <State extends Engine.GlobalState, Data>({
   context,
   drawables,
-  signals,
   state,
   debug,
   engine,
-}: Engine.DrawAllConfig<State, Data>): State => {
+}: Engine.DrawAllConfig<State, Data>) => {
   const zMap = drawables.reduce((zMap, drawable) => {
     zMap[drawable.id] = getValue(drawable.z, state, drawable) ?? 0;
     return zMap;
@@ -218,7 +308,7 @@ const drawAll = <State extends Engine.GlobalState, Data>({
     .forEach((drawable) => {
       const draw = drawable.draw;
       if (draw) {
-        state = draw.call(drawable, { context, state, signals, debug, engine });
+        state = draw.call(drawable, { context, state, debug, engine });
       }
     });
   return state;
@@ -227,14 +317,10 @@ const drawAll = <State extends Engine.GlobalState, Data>({
 export const draw = <State extends Engine.GlobalState, Data>({
   context,
   drawable,
-  signals,
   state,
   debug,
   engine,
 }: Engine.DrawConfig<State, Data>) => {
-  if (drawable.debug) {
-    debugger;
-  }
   const visible = getValue(drawable.visible, state, drawable) ?? true;
   if (visible) {
     const image = loadImage(drawable.image, state, drawable);
@@ -254,70 +340,6 @@ export const draw = <State extends Engine.GlobalState, Data>({
       sy = getValue(source?.y, state, drawable),
       sw = getValue(source?.width, state, drawable),
       sh = getValue(source?.height, state, drawable);
-    signals.forEach((signal) => {
-      if (signal.name === "keydown" && drawable.onKeyDown) {
-        drawable.onKeyDown({
-          state,
-          context,
-          debug,
-          engine,
-          signals,
-          data: signal.data,
-        });
-      }
-      if (signal.name === "keyup" && drawable.onKeyUp) {
-        drawable.onKeyUp({
-          state,
-          context,
-          debug,
-          engine,
-          signals,
-          data: signal.data,
-        });
-      }
-      if (drawable.isMouseInBounds) {
-        if (signal.name === "click" && drawable.onClick) {
-          state = drawable.onClick({
-            state,
-            context,
-            debug,
-            engine,
-            signals,
-            data: null,
-          });
-        }
-        if (signal.name === "context" && drawable.onContext) {
-          state = drawable.onContext({
-            state,
-            context,
-            debug,
-            engine,
-            signals,
-            data: null,
-          });
-        }
-        if (signal.name === "mousedown" && drawable.onMouseDown) {
-          state = drawable.onMouseDown({
-            state,
-            context,
-            debug,
-            engine,
-            signals,
-            data: null,
-          });
-        }
-        if (signal.name === "mouseup" && drawable.onMouseUp) {
-          state = drawable.onMouseUp({
-            state,
-            context,
-            debug,
-            engine,
-            signals,
-            data: null,
-          });
-        }
-      }
-    });
     context.beginPath();
     const radius = getValue(drawable.radius, state, drawable) ?? 0;
     context.roundRect(dx, dy, dw, dh, radius);
@@ -356,7 +378,6 @@ export const draw = <State extends Engine.GlobalState, Data>({
         debug,
         context,
         state,
-        signals,
         engine,
       });
     }
@@ -375,8 +396,8 @@ export const drawable = <State extends Engine.GlobalState, Data = Unknown>(
   config: Engine.DrawableWithOptionals<State, Data>
 ): Engine.Drawable<State, Data> => {
   const parent: Engine.Drawable<State, Data> = {
-    draw({ context, state, signals, debug, engine }) {
-      return draw({ drawable: this, context, state, signals, debug, engine });
+    draw({ context, state, debug, engine }) {
+      return draw({ drawable: this, context, state, debug, engine });
     },
     data: config.data!,
     id: crypto.randomUUID(),

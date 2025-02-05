@@ -35,27 +35,28 @@ export namespace Engine {
   export interface CommonDrawConfig<State extends GlobalState> {
     context: CanvasRenderingContext2D;
     state: State;
-    signals: Engine.Signal[];
     debug?: boolean;
     engine: Instance;
   }
 
   export interface DrawAllConfig<State extends GlobalState, Data>
     extends CommonDrawConfig<State> {
-    drawables: Array<Engine.Drawable<State, Data>>;
+    drawables: Array<Drawable<State, Data>>;
   }
 
   export interface DrawConfig<State extends GlobalState, Data>
     extends CommonDrawConfig<State> {
-    drawable: Engine.Drawable<State, Data>;
+    drawable: Drawable<State, Data>;
   }
 
   export interface DrawableDrawConfig<State extends GlobalState>
     extends CommonDrawConfig<State> {}
 
-  export interface DrawableEventConfig<State extends GlobalState, EventData>
-    extends CommonDrawConfig<State> {
+  export interface DrawableEventConfig<State extends GlobalState, EventData> {
     data: EventData;
+    state: State;
+    signals: Signal[];
+    engine: Instance;
   }
 
   export type Value<T, State extends GlobalState, Data> =
@@ -87,6 +88,7 @@ export namespace Engine {
     height: Value<number, State, Data>;
     row: Value<number, State, Data>;
     column: Value<number, State, Data>;
+    padding?: Value<number, State, Data>;
   }
 
   export interface SpritesheetConfig<State extends GlobalState, Data> {
@@ -106,7 +108,6 @@ export namespace Engine {
 
   export interface Drawable<State extends GlobalState, Data = unknown> {
     id: string;
-    debug?: boolean;
     x: Value<number, State, Data>;
     y: Value<number, State, Data>;
     z?: Value<number, State, Data>;
@@ -135,6 +136,10 @@ export namespace Engine {
     >;
     image?: Value<string, State, Data>;
     data: Data;
+    onUpdate?: (
+      this: Drawable<State, Data>,
+      config: DrawableEventConfig<State, unknown>
+    ) => State;
     onKeyDown?: (
       this: Drawable<State, Data>,
       config: DrawableEventConfig<State, KeyEventData>
@@ -292,6 +297,12 @@ export namespace Solitaire {
 export namespace Supaplex {
   export type Direction = "up" | "right" | "down" | "left";
 
+  export type TileType = "chip" | "empty";
+
+  export interface Tile {
+    type: TileType;
+  }
+
   export interface State extends Engine.GlobalState {
     murphy: {
       row: number;
@@ -299,5 +310,6 @@ export namespace Supaplex {
       direction: Direction;
       lastMovedAt: number;
     };
+    tiles: Tile[][];
   }
 }

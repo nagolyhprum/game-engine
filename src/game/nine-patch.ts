@@ -7,7 +7,7 @@ export const ninePatch = <State extends Engine.GlobalState, Data = unknown>(
 ) => {
   return drawable({
     ...config,
-    draw({ context, state, signals, debug, engine }) {
+    draw({ context, state, debug, engine }) {
       const { canvas: backCanvas, context: backContext } = engine.getCanvas(
         this.id
       );
@@ -25,7 +25,6 @@ export const ninePatch = <State extends Engine.GlobalState, Data = unknown>(
         drawable: this,
         context: backContext,
         state,
-        signals,
         debug,
         engine,
       });
