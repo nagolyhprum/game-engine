@@ -132,16 +132,18 @@ const update = <State extends Engine.GlobalState>({
   drawables,
   engine,
   signals,
+  data,
 }: {
   state: State;
   drawables: Array<Engine.Drawable<State, unknown>>;
   engine: Engine.Instance;
   signals: Engine.Signal[];
+  data: Engine.UpdateEvent;
 }): State => {
   return drawables.reduce((state, drawable) => {
     state =
       drawable.onUpdate?.({
-        data: null,
+        data,
         signals,
         state,
         engine,
@@ -161,6 +163,7 @@ const render = <State extends Engine.GlobalState>(
 ) => {
   requestAnimationFrame(() => render(renderable, context, engine));
   const before = Date.now();
+  const deltaTime = (before - renderable.state.now) / 1000;
   renderable.state.now = before;
   context.fillStyle = renderable.background ?? "black";
   context.fillRect(0, 0, context.canvas.width, context.canvas.height);
@@ -176,6 +179,9 @@ const render = <State extends Engine.GlobalState>(
     drawables: renderable.drawables as Engine.Drawable<State, unknown>[],
     engine,
     signals: renderable.signals,
+    data: {
+      deltaTime,
+    },
   });
   renderable.signals = [];
   context.textAlign = "right";

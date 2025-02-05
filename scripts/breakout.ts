@@ -1,4 +1,4 @@
-import { defaultState, drawable, start } from "../src/game/engine";
+import { defaultState, drawable, getValue, start } from "../src/game/engine";
 import { Breakout } from "../src/types";
 
 const COLORS = ["red", "orange", "yellow", "green", "blue", "indigo", "cyan"];
@@ -25,11 +25,42 @@ const bricks = COLORS.flatMap((background, row) => {
 });
 
 const paddle = drawable<Breakout.State>({
-  x: WIDTH / 2 - BRICK_WIDTH / 2,
+  x: (state) => state.paddle.position,
   y: HEIGHT - BRICK_HEIGHT - GAP,
   width: BRICK_WIDTH,
   height: BRICK_HEIGHT,
   background: "white",
+  onUpdate({ state, data }) {
+    const x =
+      state.paddle.position +
+      (state.paddle.velocity * data.deltaTime * WIDTH) / 3;
+    const min = 0;
+    const max = WIDTH - BRICK_WIDTH;
+    state.paddle.position = Math.max(min, Math.min(max, x));
+    return state;
+  },
+  onKeyDown({ state, data }) {
+    switch (data.key) {
+      case "ArrowLeft":
+        state.paddle.velocity -= 1;
+        break;
+      case "ArrowRight":
+        state.paddle.velocity += 1;
+        break;
+    }
+    return state;
+  },
+  onKeyUp({ state, data }) {
+    switch (data.key) {
+      case "ArrowLeft":
+        state.paddle.velocity += 1;
+        break;
+      case "ArrowRight":
+        state.paddle.velocity -= 1;
+        break;
+    }
+    return state;
+  },
 });
 
 const ball = drawable<Breakout.State>({
@@ -48,5 +79,9 @@ start({
   height: HEIGHT,
   state: {
     ...defaultState(),
+    paddle: {
+      position: WIDTH / 2 - BRICK_WIDTH / 2,
+      velocity: 0,
+    },
   },
 });

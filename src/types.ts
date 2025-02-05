@@ -106,6 +106,10 @@ export namespace Engine {
     key: string;
   }
 
+  export interface UpdateEvent {
+    deltaTime: number;
+  }
+
   export interface Drawable<State extends GlobalState, Data = unknown> {
     id: string;
     x: Value<number, State, Data>;
@@ -138,7 +142,7 @@ export namespace Engine {
     data: Data;
     onUpdate?: (
       this: Drawable<State, Data>,
-      config: DrawableEventConfig<State, unknown>
+      config: DrawableEventConfig<State, UpdateEvent>
     ) => State;
     onKeyDown?: (
       this: Drawable<State, Data>,
@@ -315,5 +319,10 @@ export namespace Supaplex {
 }
 
 export namespace Breakout {
-  export interface State extends Engine.GlobalState {}
+  export interface State extends Engine.GlobalState {
+    paddle: {
+      velocity: number;
+      position: number;
+    };
+  }
 }
