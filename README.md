@@ -40,8 +40,13 @@ Supaplex
 
 - Solitaire
 - Supaplex
+- Bomberman
 
 # TODO
 
 - TILEMAP
 - MAKE STATE IMMUTABLE
+
+Contributors
+
+- Logan Murphy (https://www.twitch.tv/hackingintocoding | https://www.youtube.com/@hacking-into-coding)

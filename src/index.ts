@@ -6,6 +6,7 @@ import { Game } from "./types";
 import "../scripts/supaplex";
 import "../scripts/minesweeper";
 import "../scripts/solitaire";
+import "../scripts/breakout";
 
 const port = process.env.PORT || 80;
 
@@ -21,6 +22,10 @@ const games = [
   {
     name: "Supaplex Maker",
     slug: "supaplex",
+  },
+  {
+    name: "Breakout",
+    slug: "breakout",
   },
 ];
 

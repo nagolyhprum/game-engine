@@ -313,3 +313,7 @@ export namespace Supaplex {
     tiles: Tile[][];
   }
 }
+
+export namespace Breakout {
+  export interface State extends Engine.GlobalState {}
+}
