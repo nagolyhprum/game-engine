@@ -64,8 +64,18 @@ const paddle = drawable<Breakout.State>({
 });
 
 const ball = drawable<Breakout.State>({
-  x: WIDTH / 2 - BALL_DIAMETER / 2,
-  y: HEIGHT - 2 * BALL_DIAMETER - 2 * GAP,
+  x: (state) => {
+    const isMoving = state.ball.velocty.x || state.ball.velocty.y;
+    return isMoving
+      ? state.ball.position.x
+      : state.paddle.position + BRICK_WIDTH / 2 - BALL_DIAMETER / 2;
+  },
+  y: (state) => {
+    const isMoving = state.ball.velocty.x || state.ball.velocty.y;
+    return isMoving
+      ? state.ball.position.y
+      : HEIGHT - 2 * GAP - 2 * BRICK_HEIGHT;
+  },
   width: BALL_DIAMETER,
   height: BALL_DIAMETER,
   radius: BALL_DIAMETER / 2,
@@ -82,6 +92,16 @@ start({
     paddle: {
       position: WIDTH / 2 - BRICK_WIDTH / 2,
       velocity: 0,
+    },
+    ball: {
+      position: {
+        x: 0,
+        y: 0,
+      },
+      velocty: {
+        x: 0,
+        y: 0,
+      },
     },
   },
 });

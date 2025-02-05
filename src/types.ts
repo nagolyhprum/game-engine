@@ -324,5 +324,15 @@ export namespace Breakout {
       velocity: number;
       position: number;
     };
+    ball: {
+      position: {
+        x: number;
+        y: number;
+      };
+      velocty: {
+        x: number;
+        y: number;
+      };
+    };
   }
 }
