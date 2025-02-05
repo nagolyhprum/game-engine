@@ -87,6 +87,7 @@ const ball = drawable<Breakout.State>({
         if (!isMoving) {
           state.ball.position.x = this.bounds.x;
           state.ball.position.y = this.bounds.y;
+          state.ball.velocty.x = -100;
           state.ball.velocty.y = -100;
         }
         break;
@@ -96,6 +97,19 @@ const ball = drawable<Breakout.State>({
   onUpdate({ state, data }) {
     state.ball.position.x += state.ball.velocty.x * data.deltaTime;
     state.ball.position.y += state.ball.velocty.y * data.deltaTime;
+    if (
+      (state.ball.velocty.x < 0 && state.ball.position.x <= 0) ||
+      (state.ball.velocty.x > 0 &&
+        state.ball.position.x + BALL_DIAMETER > WIDTH)
+    ) {
+      state.ball.velocty.x = -state.ball.velocty.x;
+    }
+    if (state.ball.velocty.y < 0 && state.ball.position.y <= 0) {
+      state.ball.velocty.y = -state.ball.velocty.y;
+    }
+    if (state.ball.velocty.y > 0 && state.ball.position.y > HEIGHT) {
+      state.ball.velocty.x = state.ball.velocty.y = 0;
+    }
     return state;
   },
 });
