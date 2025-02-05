@@ -80,6 +80,24 @@ const ball = drawable<Breakout.State>({
   height: BALL_DIAMETER,
   radius: BALL_DIAMETER / 2,
   background: "white",
+  onKeyDown({ state, data }) {
+    switch (data.key) {
+      case " ":
+        const isMoving = state.ball.velocty.x || state.ball.velocty.y;
+        if (!isMoving) {
+          state.ball.position.x = this.bounds.x;
+          state.ball.position.y = this.bounds.y;
+          state.ball.velocty.y = -100;
+        }
+        break;
+    }
+    return state;
+  },
+  onUpdate({ state, data }) {
+    state.ball.position.x += state.ball.velocty.x * data.deltaTime;
+    state.ball.position.y += state.ball.velocty.y * data.deltaTime;
+    return state;
+  },
 });
 
 start({
