@@ -325,11 +325,13 @@ export namespace Breakout {
   }
   export interface Brick {
     isAlive: boolean;
+    isImmortal: boolean;
   }
   export interface State extends Engine.GlobalState {
     lives: number;
     score: number;
     bricks: Brick[][];
+    level: number;
     paddle: {
       velocity: number;
       position: number;

@@ -1,6 +1,8 @@
 import { Engine, Unknown } from "../types";
 import { isDefined } from "../utility";
 
+const PHYSICS_STEP = 1 / 60;
+
 export const start = <State extends Engine.GlobalState>(
   config: Engine.ConfigWithOptionals<State>
 ) => {
@@ -78,23 +80,17 @@ export const start = <State extends Engine.GlobalState>(
       renderable.state.mouse.location.x = event.offsetX;
       renderable.state.mouse.location.y = event.offsetY;
     };
-    canvas.onmousedown = (event) => {
+    canvas.onmousedown = () => {
       renderable.state.mouse.leftIsDown = true;
-      event.preventDefault();
-      event.stopPropagation();
       renderable.signals.push({
         name: "mousedown",
       });
-      return false;
     };
-    canvas.onmouseup = (event) => {
+    canvas.onmouseup = () => {
       renderable.state.mouse.leftIsDown = false;
-      event.preventDefault();
-      event.stopPropagation();
       renderable.signals.push({
         name: "mouseup",
       });
-      return false;
     };
     canvas.onmouseleave = () => {
       renderable.state.mouse.leftIsDown = false;
@@ -107,13 +103,10 @@ export const start = <State extends Engine.GlobalState>(
       event.stopPropagation();
       return false;
     };
-    canvas.onclick = (event) => {
-      event.preventDefault();
-      event.stopPropagation();
+    canvas.onclick = () => {
       renderable.signals.push({
         name: "click",
       });
-      return false;
     };
     canvas.oncontextmenu = (event) => {
       event.preventDefault();
@@ -163,7 +156,7 @@ const render = <State extends Engine.GlobalState>(
 ) => {
   requestAnimationFrame(() => render(renderable, context, engine));
   const before = Date.now();
-  const deltaTime = (before - renderable.state.now) / 1000;
+  let remainingTime = (before - renderable.state.now) / 1000;
   renderable.state.now = before;
   context.fillStyle = renderable.background ?? "black";
   context.fillRect(0, 0, context.canvas.width, context.canvas.height);
@@ -174,16 +167,21 @@ const render = <State extends Engine.GlobalState>(
     debug: renderable.debug,
     engine,
   });
-  renderable.state = renderable.state = update({
-    state: renderable.state,
-    drawables: renderable.drawables as Engine.Drawable<State, unknown>[],
-    engine,
-    signals: renderable.signals,
-    data: {
-      deltaTime,
-    },
-  });
-  renderable.signals = [];
+  console.log("---");
+  while (remainingTime > 0) {
+    const deltaTime = Math.min(PHYSICS_STEP, remainingTime);
+    remainingTime -= deltaTime;
+    renderable.state = renderable.state = update({
+      state: renderable.state,
+      drawables: renderable.drawables as Engine.Drawable<State, unknown>[],
+      engine,
+      signals: renderable.signals,
+      data: {
+        deltaTime,
+      },
+    });
+    renderable.signals = [];
+  }
   context.textAlign = "right";
   context.textBaseline = "bottom";
   context.font = "24px Courier New";

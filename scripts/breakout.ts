@@ -29,7 +29,11 @@ const bricks = COLORS.flatMap((background, row) => {
         column,
       },
       background: (state) => {
-        const isAlive = state.bricks[row]?.[column]?.isAlive;
+        const cell = state.bricks[row]?.[column];
+        if (cell?.isImmortal) {
+          return "gray";
+        }
+        const isAlive = cell?.isAlive;
         return isAlive ? background : "black";
       },
     });
@@ -54,8 +58,8 @@ const paddle = drawable<Breakout.State>({
     const x =
       state.paddle.position +
       (state.paddle.velocity * data.deltaTime * WIDTH) / 3;
-    const min = 0;
-    const max = WIDTH - BRICK_WIDTH;
+    const min = GAP;
+    const max = WIDTH - BRICK_WIDTH - GAP;
     state.paddle.position = Math.max(min, Math.min(max, x));
     return state;
   },
@@ -158,10 +162,11 @@ const ball = drawable<Breakout.State>({
     return state;
   },
   onUpdate({ state, data }) {
-    state.ball.position.x += state.ball.velocty.x * data.deltaTime;
-    state.ball.position.y += state.ball.velocty.y * data.deltaTime;
-    ball.bounds.x += state.ball.velocty.x * data.deltaTime;
-    ball.bounds.y += state.ball.velocty.y * data.deltaTime;
+    const { deltaTime } = data;
+    state.ball.position.x += state.ball.velocty.x * deltaTime;
+    state.ball.position.y += state.ball.velocty.y * deltaTime;
+    ball.bounds.x += state.ball.velocty.x * deltaTime;
+    ball.bounds.y += state.ball.velocty.y * deltaTime;
     // detect paddle
     const collision =
       state.ball.velocty.y > 0 && collides(paddle.bounds, ball.bounds);
@@ -175,44 +180,44 @@ const ball = drawable<Breakout.State>({
       state.ball.velocty.x = velocity.x;
       state.ball.velocty.y = velocity.y;
       amend(state, paddle.bounds, collision);
-      if (!state.bricks.flat().find((brick) => brick.isAlive)) {
+      if (
+        !state.bricks.flat().find((brick) => brick.isAlive && !brick.isImmortal)
+      ) {
         restartBricks(state);
       }
     }
     // detect brick
-    let collided = false;
     bricks.forEach((brick) => {
-      if (!collided) {
-        const cell = state.bricks[brick.data.row]?.[brick.data.column];
-        if (cell) {
-          const isAlive = cell.isAlive;
-          const collision = isAlive && collides(brick.bounds, ball.bounds);
-          if (collision) {
-            const isXBounce = collision.height > collision.width;
-            if (isXBounce) {
-              state.ball.velocty.x = -state.ball.velocty.x;
-            } else {
-              state.ball.velocty.y = -state.ball.velocty.y;
-            }
-            amend(state, brick.bounds, collision);
-            const power = COLORS.length - brick.data.row - 1;
-            state.score += 10 * Math.pow(2, power);
-            cell.isAlive = false;
-            collided = true;
+      const cell = state.bricks[brick.data.row]?.[brick.data.column];
+      if (cell) {
+        const isAlive = cell.isAlive;
+        const collision = isAlive && collides(brick.bounds, ball.bounds);
+        if (collision) {
+          const isXBounce = collision.height > collision.width;
+          if (isXBounce) {
+            state.ball.velocty.x = -state.ball.velocty.x;
+          } else {
+            state.ball.velocty.y = -state.ball.velocty.y;
+          }
+          amend(state, brick.bounds, collision);
+          const power = COLORS.length - brick.data.row - 1;
+          if (!cell.isImmortal) {
+            state.score += 10 * state.level * Math.pow(2, power);
+            cell.isAlive = cell.isImmortal;
           }
         }
       }
     });
     // bounce walls
     if (
-      (state.ball.velocty.x < 0 && state.ball.position.x <= 0) ||
+      (state.ball.velocty.x < 0 && state.ball.position.x <= GAP) ||
       (state.ball.velocty.x > 0 &&
-        state.ball.position.x + BALL_DIAMETER > WIDTH)
+        state.ball.position.x + BALL_DIAMETER > WIDTH - GAP)
     ) {
       state.ball.velocty.x = -state.ball.velocty.x;
     }
     // bounce ceiling
-    if (state.ball.velocty.y < 0 && state.ball.position.y <= 0) {
+    if (state.ball.velocty.y < 0 && state.ball.position.y <= GAP) {
       state.ball.velocty.y = -state.ball.velocty.y;
     }
     // out of bounds
@@ -245,16 +250,22 @@ const score = drawable<Breakout.State>({
 });
 
 const restartBricks = (state: Breakout.State) => {
-  state.bricks = COLORS.map(() =>
-    Array.from({ length: COLUMNS }).map(() => ({
+  state.bricks = COLORS.map((_, row) =>
+    Array.from({ length: COLUMNS }).map((_, column) => ({
       isAlive: true,
+      isImmortal:
+        [1, COLORS.length - 2].includes(row) &&
+        [1, COLUMNS - 2].includes(column),
     }))
   );
+  state.lives++;
+  state.level++;
 };
 
 const restart = (state: Breakout.State) => {
   state.lives = 3;
   state.score = 0;
+  state.level = 1;
   restartBricks(state);
   return state;
 };
@@ -282,5 +293,6 @@ start({
       },
     },
     bricks: [],
+    level: 1,
   }),
 });
