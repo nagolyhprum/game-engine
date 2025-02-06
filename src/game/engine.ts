@@ -3,6 +3,42 @@ import { isDefined } from "../utility";
 
 const PHYSICS_STEP = 1 / 60;
 
+export const amend = <State extends Engine.GlobalState, Data = Unknown>(
+  moving: Engine.Drawable<State, Unknown>,
+  fixed: Engine.Drawable<State, Unknown>,
+  collision: Engine.Rect
+) => {
+  // updates
+  if (collision.width > collision.height) {
+    const movingCenterY = moving.bounds.y + moving.bounds.height / 2;
+    const fixedCenterY = fixed.bounds.y + fixed.bounds.height / 2;
+    const moveY = collision.height * (movingCenterY < fixedCenterY ? -1 : 1);
+    moving.bounds.y += moveY;
+  } else {
+    const movingCenterX = moving.bounds.x + moving.bounds.width / 2;
+    const fixedCenterX = fixed.bounds.x + fixed.bounds.width / 2;
+    const moveX = collision.width * (movingCenterX < fixedCenterX ? -1 : 1);
+    moving.bounds.x += moveX;
+  }
+};
+
+export const collides = (a: Engine.Rect, b: Engine.Rect) => {
+  const minX = Math.max(a.x, b.x),
+    minY = Math.max(a.y, b.y),
+    maxX = Math.min(a.x + a.width, b.x + b.width),
+    maxY = Math.min(a.y + a.height, b.y + b.height);
+  const width = maxX - minX;
+  const height = maxY - minY;
+  return width > 0 && height > 0
+    ? {
+        x: 0,
+        y: 0,
+        width,
+        height,
+      }
+    : false;
+};
+
 export const start = <State extends Engine.GlobalState>(
   config: Engine.ConfigWithOptionals<State>
 ) => {
@@ -167,7 +203,6 @@ const render = <State extends Engine.GlobalState>(
     debug: renderable.debug,
     engine,
   });
-  console.log("---");
   while (remainingTime > 0) {
     const deltaTime = Math.min(PHYSICS_STEP, remainingTime);
     remainingTime -= deltaTime;

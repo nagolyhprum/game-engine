@@ -1,8 +1,14 @@
 // POWER-UPS
 // SOUND EFFECTS
 
-import { defaultState, drawable, start } from "../src/game/engine";
-import { Breakout, Engine } from "../src/types";
+import {
+  amend,
+  collides,
+  defaultState,
+  drawable,
+  start,
+} from "../src/game/engine";
+import { Breakout } from "../src/types";
 
 const COLORS = ["red", "orange", "yellow", "green", "blue", "indigo", "cyan"];
 const BRICK_WIDTH = 50;
@@ -87,45 +93,6 @@ const paddle = drawable<Breakout.State>({
   },
 });
 
-const collides = (a: Engine.Rect, b: Engine.Rect) => {
-  const minX = Math.max(a.x, b.x),
-    minY = Math.max(a.y, b.y),
-    maxX = Math.min(a.x + a.width, b.x + b.width),
-    maxY = Math.min(a.y + a.height, b.y + b.height);
-  const width = maxX - minX;
-  const height = maxY - minY;
-  return width > 0 && height > 0
-    ? {
-        x: 0,
-        y: 0,
-        width,
-        height,
-      }
-    : false;
-};
-
-const amend = (
-  state: Breakout.State,
-  bounds: Engine.Rect,
-  collision: Engine.Rect
-) => {
-  const ballRadius = ball.bounds.width / 2;
-  // updates
-  if (collision.width > collision.height) {
-    const ballCenterY = ball.bounds.y + ballRadius;
-    const boundsCenterY = bounds.y + bounds.height / 2;
-    const moveY = collision.height * (ballCenterY < boundsCenterY ? -1 : 1);
-    state.ball.position.y += moveY;
-    ball.bounds.y += moveY;
-  } else {
-    const ballCenterX = ball.bounds.x + ballRadius;
-    const boundsCenterX = bounds.x + bounds.width / 2;
-    const moveX = collision.width * (ballCenterX < boundsCenterX ? -1 : 1);
-    state.ball.position.x += moveX;
-    ball.bounds.x += moveX;
-  }
-};
-
 const ball = drawable<Breakout.State>({
   x: (state) => {
     const isMoving = state.ball.velocty.x || state.ball.velocty.y;
@@ -179,7 +146,9 @@ const ball = drawable<Breakout.State>({
       const velocity = getBallBounce(percent);
       state.ball.velocty.x = velocity.x;
       state.ball.velocty.y = velocity.y;
-      amend(state, paddle.bounds, collision);
+      amend(ball, paddle, collision);
+      state.ball.position.x = ball.bounds.x;
+      state.ball.position.y = ball.bounds.y;
       if (
         !state.bricks.flat().find((brick) => brick.isAlive && !brick.isImmortal)
       ) {
@@ -199,7 +168,9 @@ const ball = drawable<Breakout.State>({
           } else {
             state.ball.velocty.y = -state.ball.velocty.y;
           }
-          amend(state, brick.bounds, collision);
+          amend(ball, brick, collision);
+          state.ball.position.x = ball.bounds.x;
+          state.ball.position.y = ball.bounds.y;
           const power = COLORS.length - brick.data.row - 1;
           if (!cell.isImmortal) {
             state.score += 10 * state.level * Math.pow(2, power);
