@@ -1,6 +1,3 @@
-// SCORE
-// LIVES
-// RESETS
 // POWER-UPS
 // SOUND EFFECTS
 
@@ -178,6 +175,9 @@ const ball = drawable<Breakout.State>({
       state.ball.velocty.x = velocity.x;
       state.ball.velocty.y = velocity.y;
       amend(state, paddle.bounds, collision);
+      if (!state.bricks.flat().find((brick) => brick.isAlive)) {
+        restartBricks(state);
+      }
     }
     // detect brick
     let collided = false;
@@ -195,6 +195,8 @@ const ball = drawable<Breakout.State>({
               state.ball.velocty.y = -state.ball.velocty.y;
             }
             amend(state, brick.bounds, collision);
+            const power = COLORS.length - brick.data.row - 1;
+            state.score += 10 * Math.pow(2, power);
             cell.isAlive = false;
             collided = true;
           }
@@ -216,17 +218,55 @@ const ball = drawable<Breakout.State>({
     // out of bounds
     if (state.ball.velocty.y > 0 && state.ball.position.y > HEIGHT) {
       state.ball.velocty.x = state.ball.velocty.y = 0;
+      state.lives--;
+      if (!state.lives) {
+        restart(state);
+      }
     }
     return state;
   },
 });
 
+const lives = drawable<Breakout.State>({
+  x: GAP,
+  y: GAP,
+  text: (state) => `Lives: ${state.lives}`,
+  color: "white",
+  font: "24px Courier New",
+});
+
+const score = drawable<Breakout.State>({
+  x: WIDTH - GAP,
+  y: GAP,
+  align: "right",
+  text: (state) => `Score: ${state.score}`,
+  color: "white",
+  font: "24px Courier New",
+});
+
+const restartBricks = (state: Breakout.State) => {
+  state.bricks = COLORS.map(() =>
+    Array.from({ length: COLUMNS }).map(() => ({
+      isAlive: true,
+    }))
+  );
+};
+
+const restart = (state: Breakout.State) => {
+  state.lives = 3;
+  state.score = 0;
+  restartBricks(state);
+  return state;
+};
+
 start({
-  drawables: [...bricks, ball, paddle],
+  drawables: [...bricks, ball, paddle, lives, score],
   width: WIDTH,
   height: HEIGHT,
-  state: {
+  state: restart({
     ...defaultState(),
+    lives: 3,
+    score: 0,
     paddle: {
       position: WIDTH / 2 - BRICK_WIDTH / 2,
       velocity: 0,
@@ -241,10 +281,6 @@ start({
         y: 0,
       },
     },
-    bricks: COLORS.map(() =>
-      Array.from({ length: COLUMNS }).map(() => ({
-        isAlive: true,
-      }))
-    ),
-  },
+    bricks: [],
+  }),
 });
