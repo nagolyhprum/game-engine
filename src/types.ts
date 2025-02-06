@@ -310,6 +310,8 @@ export namespace Supaplex {
 
   export interface Tile {
     type: TileType;
+    lastMovedAt: number;
+    isFalling: boolean;
   }
 
   export interface State extends Engine.GlobalState {

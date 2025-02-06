@@ -1,7 +1,7 @@
 // MECHANICS
 // FIRST LEVEL
-// * We can eat directionally
 // * Gravity - objects fall
+// * We can eat directionally
 // * Bombs explode
 // * Collision detection
 // * Rolling bombs
@@ -17,6 +17,7 @@ const CELL_SIZE = 50;
 const IDLE_AT = 600;
 const MOVE_SPEED = 300;
 const IMAGE_PADDING = 50;
+const FALL_SPEED = 2 * MOVE_SPEED;
 
 const MOVE: Record<
   Supaplex.Direction,
@@ -49,7 +50,16 @@ const MOVE: Record<
 
 const infotron = spritesheet<Supaplex.State, Supaplex.TileData>({
   x: 0,
-  y: 0,
+  y(state) {
+    const cell = state.tiles[this.data.row]?.[this.data.column];
+    if (cell?.isFalling) {
+      return Math.min(
+        0,
+        -CELL_SIZE + (CELL_SIZE * (state.now - cell.lastMovedAt)) / FALL_SPEED
+      );
+    }
+    return 0;
+  },
   width: CELL_SIZE,
   height: CELL_SIZE,
   image: "/public/supaplex/infotron.png",
@@ -245,6 +255,7 @@ const tiles = drawable<Supaplex.State>({
     return state;
   },
   onUpdate({ state }) {
+    // eat
     const isMoving = state.now - state.murphy.lastMovedAt < MOVE_SPEED;
     if (!isMoving) {
       const tile = state.tiles[state.murphy.row]?.[state.murphy.column];
@@ -252,6 +263,28 @@ const tiles = drawable<Supaplex.State>({
         tile.type = "empty";
       }
     }
+    // gravity
+    state.tiles.forEach((row, rowIndex) => {
+      row.forEach((column, columnIndex) => {
+        if (column.type === "infotron") {
+          const isFalling = state.now - column.lastMovedAt < FALL_SPEED;
+          const under = state.tiles[rowIndex + 1]?.[columnIndex];
+          const hasMurphy =
+            state.murphy.row === rowIndex + 1 &&
+            state.murphy.column === columnIndex;
+          if (!isFalling) {
+            if (!hasMurphy && under?.type === "empty") {
+              under.type = column.type;
+              under.lastMovedAt = state.now;
+              under.isFalling = true;
+              column.type = "empty";
+            } else {
+              column.isFalling = false;
+            }
+          }
+        }
+      });
+    });
     return state;
   },
 });
@@ -279,6 +312,8 @@ start<Supaplex.State>({
         const key = `${row},${column}`;
         return {
           type: overrides[key] ?? (column || row ? "chip" : "empty"),
+          isFalling: false,
+          lastMovedAt: 0,
         };
       })
     ),
