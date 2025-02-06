@@ -365,5 +365,4 @@ start<Solitaire.State>({
     },
   }),
   background: "green",
-  debug: true,
 });

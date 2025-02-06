@@ -301,7 +301,12 @@ export namespace Solitaire {
 export namespace Supaplex {
   export type Direction = "up" | "right" | "down" | "left";
 
-  export type TileType = "chip" | "empty";
+  export type TileType = "chip" | "empty" | "infotron";
+
+  export interface TileData {
+    row: number;
+    column: number;
+  }
 
   export interface Tile {
     type: TileType;

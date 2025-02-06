@@ -1,11 +1,11 @@
 // MECHANICS
 // FIRST LEVEL
-// * MOVE DIRECTIONALLY
+// * We can eat directionally
 // * Gravity - objects fall
-// * We can eat objects
 // * Bombs explode
 // * Collision detection
 // * Rolling bombs
+// * Scissors
 
 import { defaultState, drawable, start } from "../src/game/engine";
 import { spritesheet } from "../src/game/spritesheet";
@@ -46,6 +46,36 @@ const MOVE: Record<
     column: index,
   })),
 };
+
+const infotron = spritesheet<Supaplex.State, Supaplex.TileData>({
+  x: 0,
+  y: 0,
+  width: CELL_SIZE,
+  height: CELL_SIZE,
+  image: "/public/supaplex/infotron.png",
+  data: {
+    row: -1,
+    column: -1,
+  },
+  spritesheet: {
+    column(state) {
+      // if murphy is eating it
+      if (
+        state.murphy.column === this.data.column &&
+        state.murphy.row === this.data.row
+      ) {
+        return Math.floor(
+          ((state.now - state.murphy.lastMovedAt) / MOVE_SPEED) * 8
+        );
+      }
+      return 0;
+    },
+    row: 1,
+    padding: IMAGE_PADDING,
+    height: 1152 / 3,
+    width: 3072 / 8,
+  },
+});
 
 const murphy = spritesheet<Supaplex.State>({
   x: (state) => {
@@ -201,6 +231,11 @@ const tiles = drawable<Supaplex.State>({
           case "chip":
             chip.draw?.(config);
             break;
+          case "infotron":
+            infotron.data.row = rowIndex;
+            infotron.data.column = columnIndex;
+            infotron.draw?.(config);
+            break;
           case "empty":
             break;
         }
@@ -213,13 +248,17 @@ const tiles = drawable<Supaplex.State>({
     const isMoving = state.now - state.murphy.lastMovedAt < MOVE_SPEED;
     if (!isMoving) {
       const tile = state.tiles[state.murphy.row]?.[state.murphy.column];
-      if (tile?.type === "chip") {
+      if (tile?.type == "chip" || tile?.type === "infotron") {
         tile.type = "empty";
       }
     }
     return state;
   },
 });
+
+const overrides: Record<string, Supaplex.TileType> = {
+  "1,1": "infotron",
+};
 
 start<Supaplex.State>({
   drawables: [tiles, murphy],
@@ -236,9 +275,12 @@ start<Supaplex.State>({
     tiles: Array.from({ length: ROWS }).map((_, row) =>
       Array.from({
         length: COLUMNS,
-      }).map((_, column) => ({
-        type: column || row ? "chip" : "empty",
-      }))
+      }).map((_, column) => {
+        const key = `${row},${column}`;
+        return {
+          type: overrides[key] ?? (column || row ? "chip" : "empty"),
+        };
+      })
     ),
   },
   debug: true,
