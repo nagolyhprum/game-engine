@@ -1,5 +1,11 @@
-import { defaultState, drawable, getValue, start } from "../src/game/engine";
-import { Breakout } from "../src/types";
+// SCORE
+// LIVES
+// RESETS
+// POWER-UPS
+// SOUND EFFECTS
+
+import { defaultState, drawable, start } from "../src/game/engine";
+import { Breakout, Engine } from "../src/types";
 
 const COLORS = ["red", "orange", "yellow", "green", "blue", "indigo", "cyan"];
 const BRICK_WIDTH = 50;
@@ -9,20 +15,37 @@ const COLUMNS = 12;
 const WIDTH = COLUMNS * BRICK_WIDTH + (COLUMNS + 1) * GAP;
 const HEIGHT = (COLORS.length * BRICK_HEIGHT + (COLORS.length + 1) * GAP) * 4;
 const BALL_DIAMETER = BRICK_HEIGHT;
+const FPS = 24;
+const BALL_SPEED = BRICK_HEIGHT * FPS;
 
 const bricks = COLORS.flatMap((background, row) => {
   return Array.from({
     length: COLUMNS,
   }).map((_, column) => {
-    return drawable<Breakout.State>({
+    return drawable<Breakout.State, Breakout.BrickData>({
       x: column * BRICK_WIDTH + (column + 1) * GAP,
       y: row * BRICK_HEIGHT + (row + 1) * GAP + HEIGHT / 10,
       width: BRICK_WIDTH,
       height: BRICK_HEIGHT,
-      background,
+      data: {
+        row,
+        column,
+      },
+      background: (state) => {
+        const isAlive = state.bricks[row]?.[column]?.isAlive;
+        return isAlive ? background : "black";
+      },
     });
   });
 });
+
+const getBallBounce = (percent: number) => {
+  const theta = -Math.PI / 4 + (percent * Math.PI) / 2;
+  return {
+    x: Math.sin(theta) * BALL_SPEED,
+    y: -Math.cos(theta) * BALL_SPEED,
+  };
+};
 
 const paddle = drawable<Breakout.State>({
   x: (state) => state.paddle.position,
@@ -63,6 +86,45 @@ const paddle = drawable<Breakout.State>({
   },
 });
 
+const collides = (a: Engine.Rect, b: Engine.Rect) => {
+  const minX = Math.max(a.x, b.x),
+    minY = Math.max(a.y, b.y),
+    maxX = Math.min(a.x + a.width, b.x + b.width),
+    maxY = Math.min(a.y + a.height, b.y + b.height);
+  const width = maxX - minX;
+  const height = maxY - minY;
+  return width > 0 && height > 0
+    ? {
+        x: 0,
+        y: 0,
+        width,
+        height,
+      }
+    : false;
+};
+
+const amend = (
+  state: Breakout.State,
+  bounds: Engine.Rect,
+  collision: Engine.Rect
+) => {
+  const ballRadius = ball.bounds.width / 2;
+  // updates
+  if (collision.width > collision.height) {
+    const ballCenterY = ball.bounds.y + ballRadius;
+    const boundsCenterY = bounds.y + bounds.height / 2;
+    const moveY = collision.height * (ballCenterY < boundsCenterY ? -1 : 1);
+    state.ball.position.y += moveY;
+    ball.bounds.y += moveY;
+  } else {
+    const ballCenterX = ball.bounds.x + ballRadius;
+    const boundsCenterX = bounds.x + bounds.width / 2;
+    const moveX = collision.width * (ballCenterX < boundsCenterX ? -1 : 1);
+    state.ball.position.x += moveX;
+    ball.bounds.x += moveX;
+  }
+};
+
 const ball = drawable<Breakout.State>({
   x: (state) => {
     const isMoving = state.ball.velocty.x || state.ball.velocty.y;
@@ -85,10 +147,14 @@ const ball = drawable<Breakout.State>({
       case " ":
         const isMoving = state.ball.velocty.x || state.ball.velocty.y;
         if (!isMoving) {
-          state.ball.position.x = this.bounds.x;
-          state.ball.position.y = this.bounds.y;
-          state.ball.velocty.x = -100;
-          state.ball.velocty.y = -100;
+          state.ball.position.x = ball.bounds.x;
+          state.ball.position.y = ball.bounds.y;
+          const velocity = getBallBounce(Math.random());
+          state.ball.velocty.x = velocity.x;
+          state.ball.velocty.y = velocity.y;
+        } else {
+          state.ball.velocty.x = 0;
+          state.ball.velocty.y = 0;
         }
         break;
     }
@@ -97,6 +163,45 @@ const ball = drawable<Breakout.State>({
   onUpdate({ state, data }) {
     state.ball.position.x += state.ball.velocty.x * data.deltaTime;
     state.ball.position.y += state.ball.velocty.y * data.deltaTime;
+    ball.bounds.x += state.ball.velocty.x * data.deltaTime;
+    ball.bounds.y += state.ball.velocty.y * data.deltaTime;
+    // detect paddle
+    const collision =
+      state.ball.velocty.y > 0 && collides(paddle.bounds, ball.bounds);
+    if (collision) {
+      const radius = ball.bounds.width / 2;
+      const minX = paddle.bounds.x - radius;
+      const maxX = paddle.bounds.x + paddle.bounds.width + radius;
+      const x = ball.bounds.x + radius;
+      const percent = (x - minX) / (maxX - minX);
+      const velocity = getBallBounce(percent);
+      state.ball.velocty.x = velocity.x;
+      state.ball.velocty.y = velocity.y;
+      amend(state, paddle.bounds, collision);
+    }
+    // detect brick
+    let collided = false;
+    bricks.forEach((brick) => {
+      if (!collided) {
+        const cell = state.bricks[brick.data.row]?.[brick.data.column];
+        if (cell) {
+          const isAlive = cell.isAlive;
+          const collision = isAlive && collides(brick.bounds, ball.bounds);
+          if (collision) {
+            const isXBounce = collision.height > collision.width;
+            if (isXBounce) {
+              state.ball.velocty.x = -state.ball.velocty.x;
+            } else {
+              state.ball.velocty.y = -state.ball.velocty.y;
+            }
+            amend(state, brick.bounds, collision);
+            cell.isAlive = false;
+            collided = true;
+          }
+        }
+      }
+    });
+    // bounce walls
     if (
       (state.ball.velocty.x < 0 && state.ball.position.x <= 0) ||
       (state.ball.velocty.x > 0 &&
@@ -104,9 +209,11 @@ const ball = drawable<Breakout.State>({
     ) {
       state.ball.velocty.x = -state.ball.velocty.x;
     }
+    // bounce ceiling
     if (state.ball.velocty.y < 0 && state.ball.position.y <= 0) {
       state.ball.velocty.y = -state.ball.velocty.y;
     }
+    // out of bounds
     if (state.ball.velocty.y > 0 && state.ball.position.y > HEIGHT) {
       state.ball.velocty.x = state.ball.velocty.y = 0;
     }
@@ -115,7 +222,6 @@ const ball = drawable<Breakout.State>({
 });
 
 start({
-  debug: true,
   drawables: [...bricks, ball, paddle],
   width: WIDTH,
   height: HEIGHT,
@@ -135,5 +241,10 @@ start({
         y: 0,
       },
     },
+    bricks: COLORS.map(() =>
+      Array.from({ length: COLUMNS }).map(() => ({
+        isAlive: true,
+      }))
+    ),
   },
 });

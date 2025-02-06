@@ -319,7 +319,15 @@ export namespace Supaplex {
 }
 
 export namespace Breakout {
+  export interface BrickData {
+    row: number;
+    column: number;
+  }
+  export interface Brick {
+    isAlive: boolean;
+  }
   export interface State extends Engine.GlobalState {
+    bricks: Brick[][];
     paddle: {
       velocity: number;
       position: number;
