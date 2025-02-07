@@ -368,6 +368,7 @@ export const draw = <State extends Engine.GlobalState, Data>({
 }: Engine.DrawConfig<State, Data>) => {
   const visible = getValue(drawable.visible, state, drawable) ?? true;
   if (visible) {
+    context.save();
     const image = loadImage(drawable.image, state, drawable);
     const dx = getValue(drawable.x, state, drawable) ?? 0,
       dy = getValue(drawable.y, state, drawable) ?? 0,
@@ -388,6 +389,10 @@ export const draw = <State extends Engine.GlobalState, Data>({
     context.beginPath();
     const radius = getValue(drawable.radius, state, drawable) ?? 0;
     context.roundRect(dx, dy, dw, dh, radius);
+    const clip = getValue(drawable.clip, state, drawable) ?? false;
+    if (clip) {
+      context.clip();
+    }
     const background = getValue(drawable.background, state, drawable);
     if (background) {
       context.fillStyle = background;
@@ -426,6 +431,7 @@ export const draw = <State extends Engine.GlobalState, Data>({
         engine,
       });
     }
+    context.restore();
     if (debug) {
       context.lineWidth = 1;
       context.strokeStyle = "red";

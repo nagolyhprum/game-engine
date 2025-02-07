@@ -116,6 +116,7 @@ export namespace Engine {
     x: Value<number, State, Data>;
     y: Value<number, State, Data>;
     z?: Value<number, State, Data>;
+    clip?: Value<boolean, State, Data>;
     width?: Value<number, State, Data>;
     height?: Value<number, State, Data>;
     background?: Value<string, State, Data>;

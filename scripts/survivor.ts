@@ -252,9 +252,11 @@ const camera = drawable<Survivor.State>({
   },
 });
 
-const healthOffset = 0;
-const energyOffset = FONT_SIZE * 2 + BAR_HEIGHT + PADDING;
-const experienceOffset = FONT_SIZE * 4 + BAR_HEIGHT * 2 + PADDING * 2;
+const healthOffset = BAR_WIDTH + 2 * PADDING;
+const energyOffset = FONT_SIZE * 2 + BAR_HEIGHT + 3 * PADDING + BAR_WIDTH;
+const experienceOffset =
+  FONT_SIZE * 4 + 2 * BAR_HEIGHT + 4 * PADDING + BAR_WIDTH;
+
 const fontSpacing = 2;
 
 const barContainer = drawable<Survivor.State>({
@@ -266,7 +268,8 @@ const barContainer = drawable<Survivor.State>({
       x: PADDING,
       y: PADDING,
       width: BAR_WIDTH + 2 * UI_EDGE + 2 * PADDING,
-      height: 3 * BAR_HEIGHT + 6 * FONT_SIZE + 2 * UI_EDGE + 4 * PADDING,
+      height:
+        BAR_WIDTH + 3 * BAR_HEIGHT + 6 * FONT_SIZE + 2 * UI_EDGE + 6 * PADDING,
       image: "/public/survivor/ui/PNG/Default/panel_brown.png",
       ninePatch: {
         destinationEdge: 8,
@@ -274,6 +277,25 @@ const barContainer = drawable<Survivor.State>({
         sourceEdge: 8,
         width: 64,
       },
+    }),
+    // NAME
+    drawable({
+      text: "Cool Beans",
+      x: 2 * PADDING + UI_EDGE + BAR_WIDTH / 2,
+      y: 2 * PADDING + UI_EDGE + BAR_WIDTH + fontSpacing,
+      color: "black",
+      font: `bold ${FONT_SIZE}px Courier New`,
+      align: "center",
+      baseline: "top",
+    }),
+    drawable({
+      x: 2 * PADDING + UI_EDGE,
+      y: 2 * PADDING + UI_EDGE,
+      width: BAR_WIDTH,
+      height: BAR_WIDTH,
+      radius: BAR_WIDTH / 2,
+      image: "/public/survivor/portrait.png",
+      clip: true,
     }),
     // EXPERIENCE
     drawable({
