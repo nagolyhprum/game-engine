@@ -89,6 +89,7 @@ export namespace Engine {
     row: Value<number, State, Data>;
     column: Value<number, State, Data>;
     padding?: Value<number, State, Data>;
+    gap?: Value<number, State, Data>;
   }
 
   export interface SpritesheetConfig<State extends GlobalState, Data> {

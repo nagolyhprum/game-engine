@@ -34,6 +34,10 @@ Solitaire
 
 Supaplex
 
+Survivor
+
+- https://opengameart.org/content/pixelated-attackhit-animations
+
 - https://www.supaplex.online/
 
 # Ideas

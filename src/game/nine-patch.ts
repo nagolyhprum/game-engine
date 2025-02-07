@@ -15,14 +15,22 @@ export const ninePatch = <State extends Engine.GlobalState, Data = unknown>(
       const sourceEdge = getValue(ninePatch?.sourceEdge, state, this) ?? 0;
       const destinationEdge =
         getValue(ninePatch?.destinationEdge, state, this) ?? 0;
-      backCanvas.width = getValue(ninePatch?.width, state, this) ?? 0;
-      backCanvas.height = getValue(ninePatch?.height, state, this) ?? 0;
       const x = getValue(this.x, state, this) ?? 0,
         y = getValue(this.y, state, this) ?? 0,
         width = getValue(this.width, state, this) ?? 0,
         height = getValue(this.height, state, this) ?? 0;
+      const ninePatchWidth = getValue(ninePatch?.width, state, this) ?? 0;
+      const ninePatchHeight = getValue(ninePatch?.height, state, this) ?? 0;
+      backCanvas.width = ninePatchWidth;
+      backCanvas.height = ninePatchHeight;
       draw({
-        drawable: this,
+        drawable: {
+          ...this,
+          x: 0,
+          y: 0,
+          width: ninePatchWidth,
+          height: ninePatchHeight,
+        },
         context: backContext,
         state,
         debug,
@@ -31,14 +39,14 @@ export const ninePatch = <State extends Engine.GlobalState, Data = unknown>(
       const sourceColumns = [
         0,
         sourceEdge,
-        backCanvas.width - sourceEdge,
-        backCanvas.width,
+        ninePatchWidth - sourceEdge,
+        ninePatchWidth,
       ];
       const sourceRows = [
         0,
         sourceEdge,
-        backCanvas.height - sourceEdge,
-        backCanvas.height,
+        ninePatchHeight - sourceEdge,
+        ninePatchHeight,
       ];
       const destinationColumns = [
         0,

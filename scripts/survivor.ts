@@ -1,7 +1,5 @@
-// Add attacks
-// Add experience
 // Add enemies
-// Add menus
+// Add levels
 // Add health
 
 import {
@@ -11,12 +9,14 @@ import {
   drawAll,
   start,
 } from "../src/game/engine";
+import { ninePatch } from "../src/game/nine-patch";
 import { spritesheet } from "../src/game/spritesheet";
 import { Survivor } from "../src/types";
 
+const FONT_SIZE = 12;
 const WIDTH = 640;
 const HEIGHT = 480;
-const player_SPEED = 100;
+const PLAYER_SPEED = 150;
 const TILE_SIZE = 40;
 const COLUMNS = 100;
 const ROWS = 100;
@@ -24,7 +24,10 @@ const EXPERIENCE_SPAWN_RATE = 100;
 const EXPIRES_AT = 10_000;
 const SOLID_COLOR = "rgba(0, 0, 255, 1)";
 const HOLLOW_COLOR = "rgba(0, 0, 255, .3)";
-const EXPERIENCE_HEIGHT = 20;
+const PADDING = 10;
+const BAR_WIDTH = 100;
+const BAR_HEIGHT = 10;
+const UI_EDGE = 8;
 
 const tile = spritesheet<Survivor.State, Survivor.TileData>({
   x: 0,
@@ -46,6 +49,25 @@ const tile = spritesheet<Survivor.State, Survivor.TileData>({
     width: 192 / 12,
     height: 176 / 11,
     padding: 1,
+  },
+});
+
+const attack = spritesheet<Survivor.State>({
+  x: (state) => state.player.position.x,
+  y: (state) => state.player.position.y - TILE_SIZE / 2,
+  width: 2 * TILE_SIZE,
+  height: 2 * TILE_SIZE,
+  image: "/public/survivor/attacks/swing03.png",
+  spritesheet: (state) => {
+    const index = Math.floor(state.now / 100) % 10;
+    const row = Math.floor(index / 5);
+    const column = index % 5;
+    return {
+      width: 320 / 5,
+      height: 128 / 2,
+      row,
+      column,
+    };
   },
 });
 
@@ -95,11 +117,11 @@ const player = spritesheet<Survivor.State>({
   width: TILE_SIZE,
   height: TILE_SIZE,
   spritesheet: {
-    width: 17,
-    height: 17,
-    padding: 0,
+    width: 16,
+    height: 16,
     row: 11,
     column: 0,
+    gap: 1,
   },
   image:
     "/public/survivor/characters/Spritesheet/roguelikeChar_transparent.png",
@@ -139,9 +161,9 @@ const player = spritesheet<Survivor.State>({
   },
   onUpdate({ data, state }) {
     state.player.position.x +=
-      state.player.velocity.x * data.deltaTime * player_SPEED;
+      state.player.velocity.x * data.deltaTime * PLAYER_SPEED;
     state.player.position.y +=
-      state.player.velocity.y * data.deltaTime * player_SPEED;
+      state.player.velocity.y * data.deltaTime * PLAYER_SPEED;
     state.player.position.x = Math.min(
       Math.max(state.player.position.x, 0),
       TILE_SIZE * (COLUMNS - 1)
@@ -168,7 +190,7 @@ const experienceSpawner = drawable<Survivor.State>({
       context.ellipse(x, y, radius, radius, 0, 0, 2 * Math.PI);
       context.fill();
 
-      const percent = (orb.expiresAt - state.now) / EXPIRES_AT;
+      const percent = Math.max((orb.expiresAt - state.now) / EXPIRES_AT, 0);
       context.fillStyle = SOLID_COLOR;
       context.beginPath();
       context.ellipse(x, y, radius, radius, 0, 0, 2 * Math.PI * percent);
@@ -212,15 +234,15 @@ const experienceSpawner = drawable<Survivor.State>({
 const camera = drawable<Survivor.State>({
   x: 0,
   y: 0,
-  children: [tilemap, player, experienceSpawner],
+  children: [tilemap, player, experienceSpawner, attack],
   draw(config) {
     const { context, state } = config;
     context.save();
     const x = -state.player.position.x + WIDTH / 2 - TILE_SIZE / 2;
     const y = -state.player.position.y + HEIGHT / 2 - TILE_SIZE / 2;
     context.translate(
-      Math.max(Math.min(x, 0), -COLUMNS * TILE_SIZE + WIDTH),
-      Math.max(Math.min(y, 0), -ROWS * TILE_SIZE + HEIGHT)
+      Math.round(Math.max(Math.min(x, 0), -COLUMNS * TILE_SIZE + WIDTH)),
+      Math.round(Math.max(Math.min(y, 0), -ROWS * TILE_SIZE + HEIGHT))
     );
     drawAll({
       ...config,
@@ -230,25 +252,179 @@ const camera = drawable<Survivor.State>({
   },
 });
 
-const experienceBar = drawable<Survivor.State>({
+const healthOffset = 0;
+const energyOffset = FONT_SIZE * 2 + BAR_HEIGHT + PADDING;
+const experienceOffset = FONT_SIZE * 4 + BAR_HEIGHT * 2 + PADDING * 2;
+const fontSpacing = 2;
+
+const barContainer = drawable<Survivor.State>({
   x: 0,
   y: 0,
-  width: (state) => (WIDTH * state.player.experience) / state.player.levelAt,
-  height: EXPERIENCE_HEIGHT,
-  background: SOLID_COLOR,
   children: [
+    // PANEL
+    ninePatch({
+      x: PADDING,
+      y: PADDING,
+      width: BAR_WIDTH + 2 * UI_EDGE + 2 * PADDING,
+      height: 3 * BAR_HEIGHT + 6 * FONT_SIZE + 2 * UI_EDGE + 4 * PADDING,
+      image: "/public/survivor/ui/PNG/Default/panel_brown.png",
+      ninePatch: {
+        destinationEdge: 8,
+        height: 64,
+        sourceEdge: 8,
+        width: 64,
+      },
+    }),
+    // EXPERIENCE
     drawable({
-      x: 0,
-      y: 0,
-      width: WIDTH,
-      height: EXPERIENCE_HEIGHT,
-      background: HOLLOW_COLOR,
+      x: 2 * PADDING + UI_EDGE,
+      y: 2 * PADDING + UI_EDGE + experienceOffset - fontSpacing,
+      text: "Experience",
+      color: "black",
+      font: `${FONT_SIZE}px Courier New`,
+      align: "left",
+      baseline: "top",
+    }),
+    drawable({
+      x: 2 * PADDING + UI_EDGE,
+      y: 2 * PADDING + UI_EDGE + FONT_SIZE + experienceOffset,
+      width: BAR_WIDTH,
+      height: BAR_HEIGHT,
+      background: "rgba(0, 0, 0, .3)",
+      radius: 20,
+    }),
+    ninePatch({
+      x: 2 * PADDING + UI_EDGE,
+      y: 2 * PADDING + UI_EDGE + FONT_SIZE + experienceOffset,
+      width: (state) =>
+        Math.max(
+          (state.player.experience / state.player.levelAt) * BAR_WIDTH,
+          10
+        ),
+      height: BAR_HEIGHT,
+      image: "/public/survivor/ui/PNG/Default/progress_green_small.png",
+      ninePatch: {
+        destinationEdge: 5,
+        sourceEdge: 5,
+        width: 16,
+        height: 16,
+      },
+    }),
+    drawable({
+      x: 2 * PADDING + UI_EDGE + BAR_WIDTH,
+      y:
+        2 * PADDING +
+        UI_EDGE +
+        FONT_SIZE +
+        BAR_HEIGHT +
+        2 +
+        experienceOffset +
+        fontSpacing,
+      text: (state) => `${state.player.experience} / ${state.player.levelAt}`,
+      color: "black",
+      font: `${FONT_SIZE}px Courier New`,
+      align: "right",
+      baseline: "top",
+    }),
+    // HEALTH
+    drawable({
+      x: 2 * PADDING + UI_EDGE,
+      y: 2 * PADDING + UI_EDGE + healthOffset - fontSpacing,
+      text: "Health",
+      color: "black",
+      font: `${FONT_SIZE}px Courier New`,
+      align: "left",
+      baseline: "top",
+    }),
+    drawable({
+      x: 2 * PADDING + UI_EDGE,
+      y: 2 * PADDING + UI_EDGE + FONT_SIZE + healthOffset,
+      width: BAR_WIDTH,
+      height: BAR_HEIGHT,
+      background: "rgba(0, 0, 0, .3)",
+      radius: 20,
+    }),
+    ninePatch({
+      x: 2 * PADDING + UI_EDGE,
+      y: 2 * PADDING + UI_EDGE + FONT_SIZE + healthOffset,
+      width: BAR_WIDTH,
+      height: BAR_HEIGHT,
+      image: "/public/survivor/ui/PNG/Default/progress_red_small.png",
+      ninePatch: {
+        destinationEdge: 5,
+        sourceEdge: 5,
+        width: 16,
+        height: 16,
+      },
+    }),
+    drawable({
+      x: 2 * PADDING + UI_EDGE + BAR_WIDTH,
+      y:
+        2 * PADDING +
+        UI_EDGE +
+        FONT_SIZE +
+        BAR_HEIGHT +
+        healthOffset +
+        fontSpacing,
+      text: `40 / 40`,
+      color: "black",
+      font: `${FONT_SIZE}px Courier New`,
+      align: "right",
+      baseline: "top",
+    }),
+    // ENERGY
+
+    // HEALTH
+    drawable({
+      x: 2 * PADDING + UI_EDGE,
+      y: 2 * PADDING + UI_EDGE + energyOffset - fontSpacing,
+      text: "Energy",
+      color: "black",
+      font: `${FONT_SIZE}px Courier New`,
+      align: "left",
+      baseline: "top",
+    }),
+    drawable({
+      x: 2 * PADDING + UI_EDGE,
+      y: 2 * PADDING + UI_EDGE + FONT_SIZE + energyOffset,
+      width: BAR_WIDTH,
+      height: BAR_HEIGHT,
+      background: "rgba(0, 0, 0, .3)",
+      radius: 20,
+    }),
+    ninePatch({
+      x: 2 * PADDING + UI_EDGE,
+      y: 2 * PADDING + UI_EDGE + FONT_SIZE + energyOffset,
+      width: BAR_WIDTH,
+      height: BAR_HEIGHT,
+      image: "/public/survivor/ui/PNG/Default/progress_blue_small.png",
+      ninePatch: {
+        destinationEdge: 5,
+        sourceEdge: 5,
+        width: 16,
+        height: 16,
+      },
+    }),
+    drawable({
+      x: 2 * PADDING + UI_EDGE + BAR_WIDTH,
+      y:
+        2 * PADDING +
+        UI_EDGE +
+        FONT_SIZE +
+        BAR_HEIGHT +
+        energyOffset +
+        fontSpacing,
+      text: `100 / 100`,
+      color: "black",
+      font: `${FONT_SIZE}px Courier New`,
+      align: "right",
+      baseline: "top",
     }),
   ],
 });
 
 start<Survivor.State>({
-  drawables: [camera, experienceBar],
+  drawables: [camera, barContainer],
   width: WIDTH,
   height: HEIGHT,
   state: {
@@ -278,5 +454,5 @@ start<Survivor.State>({
       lastSpawnedAt: 0,
     },
   },
-  debug: true,
+  // debug: true,
 });
