@@ -177,6 +177,13 @@ const update = <State extends Engine.GlobalState>({
         state,
         engine,
       }) ?? state;
+    state = update({
+      state,
+      drawables: drawable.children ?? [],
+      data,
+      engine,
+      signals,
+    });
     state = processSignals(drawable, signals, engine, state);
     // RUN MOUSE AND KEY STUFF
     return state;
@@ -331,7 +338,7 @@ const loadImage = <State extends Engine.GlobalState, Data>(
   return imageCache[src];
 };
 
-const drawAll = <State extends Engine.GlobalState, Data>({
+export const drawAll = <State extends Engine.GlobalState, Data>({
   context,
   drawables,
   state,
@@ -347,10 +354,9 @@ const drawAll = <State extends Engine.GlobalState, Data>({
     .forEach((drawable) => {
       const draw = drawable.draw;
       if (draw) {
-        state = draw.call(drawable, { context, state, debug, engine });
+        draw.call(drawable, { context, state, debug, engine });
       }
     });
-  return state;
 };
 
 export const draw = <State extends Engine.GlobalState, Data>({
@@ -412,7 +418,7 @@ export const draw = <State extends Engine.GlobalState, Data>({
       context.stroke();
     }
     if (drawable.children) {
-      state = drawAll({
+      drawAll({
         drawables: drawable.children,
         debug,
         context,

@@ -364,7 +364,7 @@ export namespace Survivor {
 
   export interface State extends Engine.GlobalState {
     tiles: TileData[][];
-    camera: {
+    player: {
       position: {
         x: number;
         y: number;
