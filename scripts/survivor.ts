@@ -1,4 +1,16 @@
-import { defaultState, drawable, drawAll, start } from "../src/game/engine";
+// Add attacks
+// Add experience
+// Add enemies
+// Add menus
+// Add health
+
+import {
+  collides,
+  defaultState,
+  drawable,
+  drawAll,
+  start,
+} from "../src/game/engine";
 import { spritesheet } from "../src/game/spritesheet";
 import { Survivor } from "../src/types";
 
@@ -8,6 +20,11 @@ const player_SPEED = 100;
 const TILE_SIZE = 40;
 const COLUMNS = 100;
 const ROWS = 100;
+const EXPERIENCE_SPAWN_RATE = 100;
+const EXPIRES_AT = 10_000;
+const SOLID_COLOR = "rgba(0, 0, 255, 1)";
+const HOLLOW_COLOR = "rgba(0, 0, 255, .3)";
+const EXPERIENCE_HEIGHT = 20;
 
 const tile = spritesheet<Survivor.State, Survivor.TileData>({
   x: 0,
@@ -137,10 +154,65 @@ const player = spritesheet<Survivor.State>({
   },
 });
 
+const experienceSpawner = drawable<Survivor.State>({
+  x: 0,
+  y: 0,
+  draw({ state, context }) {
+    state.experience.orbs.forEach((orb) => {
+      const radius = orb.value / 2;
+      const x = orb.x;
+      const y = orb.y;
+
+      context.fillStyle = HOLLOW_COLOR;
+      context.beginPath();
+      context.ellipse(x, y, radius, radius, 0, 0, 2 * Math.PI);
+      context.fill();
+
+      const percent = (orb.expiresAt - state.now) / EXPIRES_AT;
+      context.fillStyle = SOLID_COLOR;
+      context.beginPath();
+      context.ellipse(x, y, radius, radius, 0, 0, 2 * Math.PI * percent);
+      context.lineTo(x, y);
+      context.closePath();
+      context.fill();
+    });
+  },
+  onUpdate({ state }) {
+    const shouldSpawn =
+      state.now - state.experience.lastSpawnedAt > EXPERIENCE_SPAWN_RATE;
+    if (shouldSpawn) {
+      state.experience.lastSpawnedAt = state.now;
+      const orb: Survivor.ExperienceOrb = {
+        value: Math.floor(Math.random() * 90) + 10,
+        x: Math.random() * COLUMNS * TILE_SIZE,
+        y: Math.random() * ROWS * TILE_SIZE,
+        expiresAt: state.now + EXPIRES_AT,
+      };
+      state.experience.orbs.push(orb);
+      state.experience.orbs = state.experience.orbs.filter((orb) => {
+        const radius = orb.value / 2;
+        if (
+          collides(player.bounds, {
+            x: orb.x - radius,
+            y: orb.y - radius,
+            width: 2 * radius,
+            height: 2 * radius,
+          })
+        ) {
+          orb.expiresAt = state.now;
+          state.player.experience += orb.value;
+        }
+        return orb.expiresAt > state.now;
+      });
+    }
+    return state;
+  },
+});
+
 const camera = drawable<Survivor.State>({
   x: 0,
   y: 0,
-  children: [tilemap, player],
+  children: [tilemap, player, experienceSpawner],
   draw(config) {
     const { context, state } = config;
     context.save();
@@ -158,8 +230,25 @@ const camera = drawable<Survivor.State>({
   },
 });
 
+const experienceBar = drawable<Survivor.State>({
+  x: 0,
+  y: 0,
+  width: (state) => (WIDTH * state.player.experience) / state.player.levelAt,
+  height: EXPERIENCE_HEIGHT,
+  background: SOLID_COLOR,
+  children: [
+    drawable({
+      x: 0,
+      y: 0,
+      width: WIDTH,
+      height: EXPERIENCE_HEIGHT,
+      background: HOLLOW_COLOR,
+    }),
+  ],
+});
+
 start<Survivor.State>({
-  drawables: [camera],
+  drawables: [camera, experienceBar],
   width: WIDTH,
   height: HEIGHT,
   state: {
@@ -177,10 +266,16 @@ start<Survivor.State>({
         x: WIDTH / 2 - TILE_SIZE / 2,
         y: HEIGHT / 2 - TILE_SIZE / 2,
       },
+      experience: 0,
       velocity: {
         x: 0,
         y: 0,
       },
+      levelAt: 1_000,
+    },
+    experience: {
+      orbs: [],
+      lastSpawnedAt: 0,
     },
   },
   debug: true,

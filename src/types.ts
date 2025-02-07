@@ -357,6 +357,12 @@ export namespace Breakout {
 }
 
 export namespace Survivor {
+  export interface ExperienceOrb {
+    x: number;
+    y: number;
+    value: number;
+    expiresAt: number;
+  }
   export interface TileData {
     row: number;
     column: number;
@@ -369,10 +375,16 @@ export namespace Survivor {
         x: number;
         y: number;
       };
+      experience: number;
       velocity: {
         x: number;
         y: number;
       };
+      levelAt: number;
+    };
+    experience: {
+      orbs: ExperienceOrb[];
+      lastSpawnedAt: number;
     };
   }
 }
