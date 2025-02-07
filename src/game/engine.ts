@@ -436,7 +436,7 @@ export const drawable = <State extends Engine.GlobalState, Data = Unknown>(
 ): Engine.Drawable<State, Data> => {
   const parent: Engine.Drawable<State, Data> = {
     draw({ context, state, debug, engine }) {
-      return draw({ drawable: this, context, state, debug, engine });
+      draw({ drawable: this, context, state, debug, engine });
     },
     data: config.data!,
     id: crypto.randomUUID(),

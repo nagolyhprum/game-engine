@@ -7,6 +7,7 @@ import "../scripts/supaplex";
 import "../scripts/minesweeper";
 import "../scripts/solitaire";
 import "../scripts/breakout";
+import "../scripts/survivor";
 
 const port = process.env.PORT || 80;
 
@@ -26,6 +27,10 @@ const games = [
   {
     name: "Breakout",
     slug: "breakout",
+  },
+  {
+    name: "Survivor",
+    slug: "survivor",
   },
 ];
 

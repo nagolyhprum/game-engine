@@ -173,7 +173,7 @@ export namespace Engine {
     draw?: (
       this: Drawable<State, Data>,
       config: DrawableDrawConfig<State>
-    ) => State;
+    ) => void;
     parent?: Drawable<State, Unknown>;
   }
 
@@ -349,6 +349,27 @@ export namespace Breakout {
         y: number;
       };
       velocty: {
+        x: number;
+        y: number;
+      };
+    };
+  }
+}
+
+export namespace Survivor {
+  export interface TileData {
+    row: number;
+    column: number;
+  }
+
+  export interface State extends Engine.GlobalState {
+    tiles: TileData[][];
+    camera: {
+      position: {
+        x: number;
+        y: number;
+      };
+      velocity: {
         x: number;
         y: number;
       };

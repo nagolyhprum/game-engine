@@ -21,7 +21,7 @@ export const ninePatch = <State extends Engine.GlobalState, Data = unknown>(
         y = getValue(this.y, state, this) ?? 0,
         width = getValue(this.width, state, this) ?? 0,
         height = getValue(this.height, state, this) ?? 0;
-      state = draw({
+      draw({
         drawable: this,
         context: backContext,
         state,
@@ -73,7 +73,6 @@ export const ninePatch = <State extends Engine.GlobalState, Data = unknown>(
           context.drawImage(backCanvas, sx, sy, sw, sh, dx, dy, dw, dh);
         }
       }
-      return state;
     },
   });
 };

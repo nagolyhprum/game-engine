@@ -1,10 +1,9 @@
 // MECHANICS
 // FIRST LEVEL
-// * Gravity - objects fall
-// * We can eat directionally
-// * Bombs explode
-// * Collision detection
 // * Rolling bombs
+// * Collision detection
+// * Bombs explode
+// * We can eat directionally
 // * Scissors
 
 import { defaultState, drawable, start } from "../src/game/engine";
@@ -252,7 +251,6 @@ const tiles = drawable<Supaplex.State>({
         context.restore();
       });
     });
-    return state;
   },
   onUpdate({ state }) {
     // eat
