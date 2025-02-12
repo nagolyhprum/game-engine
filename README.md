@@ -36,7 +36,9 @@ Supaplex
 
 Survivor
 
+- https://opengameart.org/content/wind-hit-time-morph
 - https://opengameart.org/content/pixelated-attackhit-animations
+- https://opengameart.org/content/5-hit-sounds-dying
 
 - https://www.supaplex.online/
 

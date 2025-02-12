@@ -374,11 +374,19 @@ export namespace Survivor {
   export interface Enemy {
     x: number;
     y: number;
+    health: number;
+    attack: number;
+    lastAttackedAt: number;
+    attackCooldown: number;
   }
 
   export interface State extends Engine.GlobalState {
     tiles: TileData[][];
     player: {
+      health: {
+        current: number;
+        max: number;
+      };
       level: number;
       position: {
         x: number;

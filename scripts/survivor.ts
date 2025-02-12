@@ -1,6 +1,5 @@
 // special attacks (energy)
 // damage counters
-// enemies should do damage
 // character attacks should do damage
 // level up
 // me vs twitch chat
@@ -15,7 +14,9 @@ import {
 import { ninePatch } from "../src/game/nine-patch";
 import { spritesheet } from "../src/game/spritesheet";
 import { Engine, Survivor } from "../src/types";
+import { shuffle } from "../src/utility";
 
+const AUDIO = 0.1;
 const FONT_SIZE = 12;
 const WIDTH = 640;
 const HEIGHT = 480;
@@ -33,6 +34,10 @@ const BAR_WIDTH = 100;
 const BAR_HEIGHT = 10;
 const UI_EDGE = 8;
 const ENEMY_SPEED = 50;
+
+const hits = Array.from({ length: 5 }).map(
+  (_, index) => `/public/survivor/audio/hit${index + 1}.mp3`
+);
 
 const tile = spritesheet<Survivor.State, Survivor.TileData>({
   x: 0,
@@ -165,18 +170,20 @@ const player = spritesheet<Survivor.State>({
     return state;
   },
   onUpdate({ data, state }) {
-    state.player.position.x +=
-      state.player.velocity.x * data.deltaTime * PLAYER_SPEED;
-    state.player.position.y +=
-      state.player.velocity.y * data.deltaTime * PLAYER_SPEED;
-    state.player.position.x = Math.min(
-      Math.max(state.player.position.x, 0),
-      TILE_SIZE * (COLUMNS - 1)
-    );
-    state.player.position.y = Math.min(
-      Math.max(state.player.position.y, 0),
-      TILE_SIZE * (ROWS - 1)
-    );
+    if (state.player.health.current > 0) {
+      state.player.position.x +=
+        state.player.velocity.x * data.deltaTime * PLAYER_SPEED;
+      state.player.position.y +=
+        state.player.velocity.y * data.deltaTime * PLAYER_SPEED;
+      state.player.position.x = Math.min(
+        Math.max(state.player.position.x, 0),
+        TILE_SIZE * (COLUMNS - 1)
+      );
+      state.player.position.y = Math.min(
+        Math.max(state.player.position.y, 0),
+        TILE_SIZE * (ROWS - 1)
+      );
+    }
     return state;
   },
 });
@@ -192,14 +199,14 @@ const enemySpawner = drawable<Survivor.State>({
     state.enemies.spawned.forEach((enemy) => {
       const x = enemy.x;
       const y = enemy.y;
-      const radius = 20;
+      const radius = TILE_SIZE / 2;
       context.fillStyle = "rgba(255, 0, 0, .7)";
       context.beginPath();
       context.ellipse(x, y, radius, radius, 0, 0, 2 * Math.PI);
       context.fill();
     });
   },
-  onUpdate({ state, data }) {
+  onUpdate({ state, data, engine }) {
     const shouldSpawn =
       state.now - state.enemies.lastSpawnedAt > ENEMY_SPAWN_RATE;
     if (shouldSpawn && state.enemies.spawned.length < 100) {
@@ -215,16 +222,50 @@ const enemySpawner = drawable<Survivor.State>({
         y:
           state.player.position.y +
           (Math.cos(theta) * TILE_SIZE * hypotenuse) / 2,
+        attack: 1,
+        health: 10,
+        attackCooldown: 1000,
+        lastAttackedAt: 0,
       };
       state.enemies.spawned.push(enemy);
     }
-    state.enemies.spawned.forEach((enemy) => {
-      const dx = state.player.position.x + TILE_SIZE / 2 - enemy.x;
-      const dy = state.player.position.y + TILE_SIZE / 2 - enemy.y;
-      const length = Math.sqrt(dx * dx + dy * dy);
-      enemy.x += (dx / length) * ENEMY_SPEED * data.deltaTime;
-      enemy.y += (dy / length) * ENEMY_SPEED * data.deltaTime;
-    });
+    if (state.player.health.current > 0) {
+      let wasHit = false;
+      state.enemies.spawned.forEach((enemy) => {
+        const dx = state.player.position.x + TILE_SIZE / 2 - enemy.x;
+        const dy = state.player.position.y + TILE_SIZE / 2 - enemy.y;
+        const length = Math.sqrt(dx * dx + dy * dy);
+        enemy.x += (dx / length) * ENEMY_SPEED * data.deltaTime;
+        enemy.y += (dy / length) * ENEMY_SPEED * data.deltaTime;
+        const canAttack =
+          enemy.lastAttackedAt + enemy.attackCooldown < state.now;
+        if (canAttack) {
+          const bounds = {
+            x: enemy.x - TILE_SIZE / 2,
+            y: enemy.y - TILE_SIZE / 2,
+            width: TILE_SIZE,
+            height: TILE_SIZE,
+          };
+          if (collides(player.bounds, bounds)) {
+            wasHit = true;
+            state.player.health.current = Math.max(
+              0,
+              state.player.health.current - enemy.attack
+            );
+            enemy.lastAttackedAt = state.now;
+          }
+        }
+      });
+      if (wasHit) {
+        engine.play("/public/survivor/audio/enemy-attack.wav", AUDIO);
+        if (state.player.health.current > 0) {
+          const hit = shuffle(hits)[0]!;
+          engine.play(hit, AUDIO);
+        } else {
+          engine.play("/public/survivor/audio/die1.mp3", AUDIO);
+        }
+      }
+    }
     return state;
   },
 });
@@ -364,7 +405,12 @@ const stats = column<Survivor.State>(
           radius: 20,
         }),
         ninePatch({
-          width: BAR_WIDTH,
+          width: (state) =>
+            Math.max(
+              (state.player.health.current / state.player.health.max) *
+                BAR_WIDTH,
+              10
+            ),
           height: BAR_HEIGHT,
           image: "/public/survivor/ui/PNG/Default/progress_red_small.png",
           ninePatch: {
@@ -378,7 +424,8 @@ const stats = column<Survivor.State>(
     }),
     drawable({
       height: FONT_SIZE,
-      text: `40 / 40`,
+      text: (state) =>
+        `${state.player.health.current} / ${state.player.health.max}`,
       color: "black",
       font: `${FONT_SIZE}px Courier New`,
       align: "right",
@@ -531,6 +578,10 @@ start<Survivor.State>({
       }))
     ),
     player: {
+      health: {
+        current: 40,
+        max: 40,
+      },
       level: 1,
       position: {
         x: WIDTH / 2 - TILE_SIZE / 2,
