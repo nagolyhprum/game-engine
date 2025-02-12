@@ -386,10 +386,11 @@ export const draw = <State extends Engine.GlobalState, Data>({
       sy = getValue(source?.y, state, drawable),
       sw = getValue(source?.width, state, drawable),
       sh = getValue(source?.height, state, drawable);
-    context.beginPath();
     const radius = getValue(drawable.radius, state, drawable) ?? 0;
-    context.roundRect(dx, dy, dw, dh, radius);
     const clip = getValue(drawable.clip, state, drawable) ?? false;
+    context.translate(dx, dy);
+    context.beginPath();
+    context.roundRect(0, 0, dw, dh, radius);
     if (clip) {
       context.clip();
     }
@@ -400,9 +401,9 @@ export const draw = <State extends Engine.GlobalState, Data>({
     }
     if (image?.complete) {
       if (isDefined(sx) && isDefined(sy) && isDefined(sw) && isDefined(sh)) {
-        context.drawImage(image, sx, sy, sw, sh, dx, dy, dw, dh);
+        context.drawImage(image, sx, sy, sw, sh, 0, 0, dw, dh);
       } else {
-        context.drawImage(image, dx, dy, dw, dh);
+        context.drawImage(image, 0, 0, dw, dh);
       }
     }
     const text = getValue(drawable.text, state, drawable);
@@ -413,7 +414,25 @@ export const draw = <State extends Engine.GlobalState, Data>({
       context.font =
         getValue(drawable.font, state, drawable) ?? `24px sans-sarif`;
       context.fillStyle = getValue(drawable.color, state, drawable) ?? "";
-      context.fillText(text, dx + dw / 2, dy + dh / 2);
+
+      let tx = 0,
+        ty = 0;
+      switch (context.textAlign) {
+        case "center":
+          tx = dw / 2;
+          break;
+        case "right":
+        case "end":
+          tx = dw;
+      }
+      switch (context.textBaseline) {
+        case "middle":
+          ty = dh / 2;
+          break;
+        case "bottom":
+          ty = dh;
+      }
+      context.fillText(text, tx, ty);
     }
     const stroke = getValue(drawable.stroke, state, drawable);
     if (stroke) {
@@ -431,21 +450,35 @@ export const draw = <State extends Engine.GlobalState, Data>({
         engine,
       });
     }
-    context.restore();
     if (debug) {
       context.lineWidth = 1;
       context.strokeStyle = "red";
       context.beginPath();
-      context.rect(dx, dy, dw, dh);
+      context.rect(0, 0, dw, dh);
       context.stroke();
     }
+    context.restore();
   }
   return state;
+};
+
+const numberRegexp = /\d+/;
+const findNumber = (
+  font: Engine.Value<unknown, Engine.GlobalState, unknown>
+) => {
+  if (typeof font === "string") {
+    const result = numberRegexp.exec(font);
+    if (result) {
+      return parseFloat(result[0]);
+    }
+  }
+  return 10;
 };
 
 export const drawable = <State extends Engine.GlobalState, Data = Unknown>(
   config: Engine.DrawableWithOptionals<State, Data>
 ): Engine.Drawable<State, Data> => {
+  const height = findNumber(config.font);
   const parent: Engine.Drawable<State, Data> = {
     draw({ context, state, debug, engine }) {
       draw({ drawable: this, context, state, debug, engine });
@@ -458,6 +491,7 @@ export const drawable = <State extends Engine.GlobalState, Data = Unknown>(
       width: 0,
       height: 0,
     },
+    height,
     ...config,
   };
   config.children?.forEach((child) => {

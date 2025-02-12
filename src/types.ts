@@ -113,8 +113,8 @@ export namespace Engine {
 
   export interface Drawable<State extends GlobalState, Data = unknown> {
     id: string;
-    x: Value<number, State, Data>;
-    y: Value<number, State, Data>;
+    x?: Value<number, State, Data>;
+    y?: Value<number, State, Data>;
     z?: Value<number, State, Data>;
     clip?: Value<boolean, State, Data>;
     width?: Value<number, State, Data>;
@@ -373,6 +373,7 @@ export namespace Survivor {
   export interface State extends Engine.GlobalState {
     tiles: TileData[][];
     player: {
+      level: number;
       position: {
         x: number;
         y: number;
