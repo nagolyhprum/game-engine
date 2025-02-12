@@ -399,5 +399,7 @@ export namespace Survivor {
       spawned: Enemy[];
       lastSpawnedAt: number;
     };
+    isMenuVisible: boolean;
+    menuVisibility: number;
   }
 }

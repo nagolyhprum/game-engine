@@ -1,6 +1,8 @@
-// add enemies
+// special attacks (energy)
+// damage counters
 // enemies should do damage
 // character attacks should do damage
+// level up
 // me vs twitch chat
 
 import {
@@ -215,26 +217,6 @@ const enemySpawner = drawable<Survivor.State>({
           (Math.cos(theta) * TILE_SIZE * hypotenuse) / 2,
       };
       state.enemies.spawned.push(enemy);
-      // state.enemies.spawned = state.enemies.spawned.filter((orb) => {
-      //   const radius = orb.value / 2;
-      //   if (
-      //     collides(player.bounds, {
-      //       x: orb.x - radius,
-      //       y: orb.y - radius,
-      //       width: 2 * radius,
-      //       height: 2 * radius,
-      //     })
-      //   ) {
-      //     orb.expiresAt = state.now;
-      //     state.player.experience += orb.value;
-      //     if (state.player.experience >= state.player.levelAt) {
-      //       state.player.level++;
-      //       state.player.experience %= state.player.levelAt;
-      //       state.player.levelAt *= 2;
-      //     }
-      //   }
-      //   return orb.expiresAt > state.now;
-      // });
     }
     state.enemies.spawned.forEach((enemy) => {
       const dx = state.player.position.x + TILE_SIZE / 2 - enemy.x;
@@ -487,14 +469,36 @@ const getBottom = <State extends Engine.GlobalState>(
   return 0;
 };
 
+const BAR_CONTAINER_WIDTH = BAR_WIDTH + 2 * UI_EDGE + 2 * PADDING;
 const barContainer = drawable<Survivor.State>({
-  x: PADDING,
+  x: (state) =>
+    PADDING - (1 - state.menuVisibility) * (PADDING + BAR_CONTAINER_WIDTH),
   y: PADDING,
   alpha: 0.9,
+  onKeyDown({ state, data }) {
+    if (data.key === "Escape") {
+      state.isMenuVisible = !state.isMenuVisible;
+    }
+    return state;
+  },
+  onUpdate({ state, data }) {
+    if (state.isMenuVisible) {
+      state.menuVisibility = Math.min(
+        state.menuVisibility + data.deltaTime * 3,
+        1
+      );
+    } else {
+      state.menuVisibility = Math.max(
+        state.menuVisibility - data.deltaTime * 3,
+        0
+      );
+    }
+    return state;
+  },
   children: [
     // PANEL
     ninePatch({
-      width: BAR_WIDTH + 2 * UI_EDGE + 2 * PADDING,
+      width: BAR_CONTAINER_WIDTH,
       height: getBottom(stats.at(-1)) + UI_EDGE * 2 + PADDING * 2,
       image: "/public/survivor/ui/PNG/Default/panel_brown.png",
       ninePatch: {
@@ -547,6 +551,8 @@ start<Survivor.State>({
       spawned: [],
       lastSpawnedAt: 0,
     },
+    isMenuVisible: true,
+    menuVisibility: 1,
   },
-  debug: true,
+  // debug: true,
 });
