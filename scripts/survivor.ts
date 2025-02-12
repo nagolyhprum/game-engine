@@ -1,4 +1,7 @@
-// Add enemies
+// add enemies
+// enemies should do damage
+// character attacks should do damage
+// me vs twitch chat
 
 import {
   collides,
@@ -19,6 +22,7 @@ const TILE_SIZE = 40;
 const COLUMNS = 100;
 const ROWS = 100;
 const EXPERIENCE_SPAWN_RATE = 100;
+const ENEMY_SPAWN_RATE = 1_000;
 const EXPIRES_AT = 10_000;
 const SOLID_COLOR = "rgba(0, 0, 255, 1)";
 const HOLLOW_COLOR = "rgba(0, 0, 255, .3)";
@@ -26,6 +30,7 @@ const PADDING = 10;
 const BAR_WIDTH = 100;
 const BAR_HEIGHT = 10;
 const UI_EDGE = 8;
+const ENEMY_SPEED = 50;
 
 const tile = spritesheet<Survivor.State, Survivor.TileData>({
   x: 0,
@@ -174,11 +179,79 @@ const player = spritesheet<Survivor.State>({
   },
 });
 
+const normalize = (input: number) => {
+  return input ? input / Math.abs(input) : 0;
+};
+
+const enemySpawner = drawable<Survivor.State>({
+  x: 0,
+  y: 0,
+  draw({ state, context }) {
+    state.enemies.spawned.forEach((enemy) => {
+      const x = enemy.x;
+      const y = enemy.y;
+      const radius = 20;
+      context.fillStyle = "rgba(255, 0, 0, .7)";
+      context.beginPath();
+      context.ellipse(x, y, radius, radius, 0, 0, 2 * Math.PI);
+      context.fill();
+    });
+  },
+  onUpdate({ state, data }) {
+    const shouldSpawn =
+      state.now - state.enemies.lastSpawnedAt > ENEMY_SPAWN_RATE;
+    if (shouldSpawn && state.enemies.spawned.length < 100) {
+      state.enemies.lastSpawnedAt = state.now;
+      const theta = 2 * Math.PI * Math.random();
+      const rows = Math.ceil(WIDTH / TILE_SIZE) + 1;
+      const columns = Math.ceil(HEIGHT / TILE_SIZE) + 1;
+      const hypotenuse = Math.sqrt(rows * rows + columns * columns);
+      const enemy: Survivor.Enemy = {
+        x:
+          state.player.position.x +
+          (Math.sin(theta) * TILE_SIZE * hypotenuse) / 2,
+        y:
+          state.player.position.y +
+          (Math.cos(theta) * TILE_SIZE * hypotenuse) / 2,
+      };
+      state.enemies.spawned.push(enemy);
+      // state.enemies.spawned = state.enemies.spawned.filter((orb) => {
+      //   const radius = orb.value / 2;
+      //   if (
+      //     collides(player.bounds, {
+      //       x: orb.x - radius,
+      //       y: orb.y - radius,
+      //       width: 2 * radius,
+      //       height: 2 * radius,
+      //     })
+      //   ) {
+      //     orb.expiresAt = state.now;
+      //     state.player.experience += orb.value;
+      //     if (state.player.experience >= state.player.levelAt) {
+      //       state.player.level++;
+      //       state.player.experience %= state.player.levelAt;
+      //       state.player.levelAt *= 2;
+      //     }
+      //   }
+      //   return orb.expiresAt > state.now;
+      // });
+    }
+    state.enemies.spawned.forEach((enemy) => {
+      const dx = state.player.position.x + TILE_SIZE / 2 - enemy.x;
+      const dy = state.player.position.y + TILE_SIZE / 2 - enemy.y;
+      const length = Math.sqrt(dx * dx + dy * dy);
+      enemy.x += (dx / length) * ENEMY_SPEED * data.deltaTime;
+      enemy.y += (dy / length) * ENEMY_SPEED * data.deltaTime;
+    });
+    return state;
+  },
+});
+
 const experienceSpawner = drawable<Survivor.State>({
   x: 0,
   y: 0,
   draw({ state, context }) {
-    state.experience.orbs.forEach((orb) => {
+    state.experience.spawned.forEach((orb) => {
       const radius = orb.value / 2;
       const x = orb.x;
       const y = orb.y;
@@ -200,7 +273,7 @@ const experienceSpawner = drawable<Survivor.State>({
   onUpdate({ state }) {
     const shouldSpawn =
       state.now - state.experience.lastSpawnedAt > EXPERIENCE_SPAWN_RATE;
-    if (shouldSpawn) {
+    if (shouldSpawn && state.experience.spawned.length < 100) {
       state.experience.lastSpawnedAt = state.now;
       const orb: Survivor.ExperienceOrb = {
         value: Math.floor(Math.random() * 90) + 10,
@@ -208,28 +281,28 @@ const experienceSpawner = drawable<Survivor.State>({
         y: Math.random() * ROWS * TILE_SIZE,
         expiresAt: state.now + EXPIRES_AT,
       };
-      state.experience.orbs.push(orb);
-      state.experience.orbs = state.experience.orbs.filter((orb) => {
-        const radius = orb.value / 2;
-        if (
-          collides(player.bounds, {
-            x: orb.x - radius,
-            y: orb.y - radius,
-            width: 2 * radius,
-            height: 2 * radius,
-          })
-        ) {
-          orb.expiresAt = state.now;
-          state.player.experience += orb.value;
-          if (state.player.experience >= state.player.levelAt) {
-            state.player.level++;
-            state.player.experience %= state.player.levelAt;
-            state.player.levelAt *= 2;
-          }
-        }
-        return orb.expiresAt > state.now;
-      });
+      state.experience.spawned.push(orb);
     }
+    state.experience.spawned = state.experience.spawned.filter((orb) => {
+      const radius = orb.value / 2;
+      if (
+        collides(player.bounds, {
+          x: orb.x - radius,
+          y: orb.y - radius,
+          width: 2 * radius,
+          height: 2 * radius,
+        })
+      ) {
+        orb.expiresAt = state.now;
+        state.player.experience += orb.value;
+        if (state.player.experience >= state.player.levelAt) {
+          state.player.level++;
+          state.player.experience %= state.player.levelAt;
+          state.player.levelAt *= 2;
+        }
+      }
+      return orb.expiresAt > state.now;
+    });
     return state;
   },
 });
@@ -237,7 +310,7 @@ const experienceSpawner = drawable<Survivor.State>({
 const camera = drawable<Survivor.State>({
   x: 0,
   y: 0,
-  children: [tilemap, player, experienceSpawner, attack],
+  children: [tilemap, player, experienceSpawner, enemySpawner, attack],
   draw(config) {
     const { context, state } = config;
     context.save();
@@ -417,6 +490,7 @@ const getBottom = <State extends Engine.GlobalState>(
 const barContainer = drawable<Survivor.State>({
   x: PADDING,
   y: PADDING,
+  alpha: 0.9,
   children: [
     // PANEL
     ninePatch({
@@ -466,9 +540,13 @@ start<Survivor.State>({
       levelAt: 100,
     },
     experience: {
-      orbs: [],
+      spawned: [],
+      lastSpawnedAt: 0,
+    },
+    enemies: {
+      spawned: [],
       lastSpawnedAt: 0,
     },
   },
-  // debug: true,
+  debug: true,
 });

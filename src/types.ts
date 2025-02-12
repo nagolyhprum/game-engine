@@ -113,6 +113,7 @@ export namespace Engine {
 
   export interface Drawable<State extends GlobalState, Data = unknown> {
     id: string;
+    alpha?: Value<number, State, Data>;
     x?: Value<number, State, Data>;
     y?: Value<number, State, Data>;
     z?: Value<number, State, Data>;
@@ -370,6 +371,11 @@ export namespace Survivor {
     column: number;
   }
 
+  export interface Enemy {
+    x: number;
+    y: number;
+  }
+
   export interface State extends Engine.GlobalState {
     tiles: TileData[][];
     player: {
@@ -386,7 +392,11 @@ export namespace Survivor {
       levelAt: number;
     };
     experience: {
-      orbs: ExperienceOrb[];
+      spawned: ExperienceOrb[];
+      lastSpawnedAt: number;
+    };
+    enemies: {
+      spawned: Enemy[];
       lastSpawnedAt: number;
     };
   }

@@ -369,6 +369,7 @@ export const draw = <State extends Engine.GlobalState, Data>({
   const visible = getValue(drawable.visible, state, drawable) ?? true;
   if (visible) {
     context.save();
+    context.globalAlpha = getValue(drawable.alpha, state, drawable) ?? 1;
     const image = loadImage(drawable.image, state, drawable);
     const dx = getValue(drawable.x, state, drawable) ?? 0,
       dy = getValue(drawable.y, state, drawable) ?? 0,
