@@ -1,5 +1,4 @@
 // special attacks (energy)
-// damage counters
 // character attacks should do damage
 // level up
 // me vs twitch chat
@@ -34,6 +33,7 @@ const BAR_WIDTH = 100;
 const BAR_HEIGHT = 10;
 const UI_EDGE = 8;
 const ENEMY_SPEED = 50;
+const HEALTH_ADJUSTMENT_EXPIRES = 3000;
 
 const hits = Array.from({ length: 5 }).map(
   (_, index) => `/public/survivor/audio/hit${index + 1}.mp3`
@@ -230,7 +230,7 @@ const enemySpawner = drawable<Survivor.State>({
       state.enemies.spawned.push(enemy);
     }
     if (state.player.health.current > 0) {
-      let wasHit = false;
+      let totalDamage = 0;
       state.enemies.spawned.forEach((enemy) => {
         const dx = state.player.position.x + TILE_SIZE / 2 - enemy.x;
         const dy = state.player.position.y + TILE_SIZE / 2 - enemy.y;
@@ -247,16 +247,20 @@ const enemySpawner = drawable<Survivor.State>({
             height: TILE_SIZE,
           };
           if (collides(player.bounds, bounds)) {
-            wasHit = true;
-            state.player.health.current = Math.max(
-              0,
-              state.player.health.current - enemy.attack
-            );
+            const damage = Math.min(enemy.attack, state.player.health.current);
+            totalDamage += damage;
+            state.player.health.current -= damage;
             enemy.lastAttackedAt = state.now;
           }
         }
       });
-      if (wasHit) {
+      if (totalDamage) {
+        state.healthAdjustments.push({
+          adjustment: -totalDamage,
+          createdAt: state.now,
+          x: state.player.position.x + TILE_SIZE / 2,
+          y: state.player.position.y,
+        });
         engine.play("/public/survivor/audio/enemy-attack.wav", AUDIO);
         if (state.player.health.current > 0) {
           const hit = shuffle(hits)[0]!;
@@ -267,6 +271,35 @@ const enemySpawner = drawable<Survivor.State>({
       }
     }
     return state;
+  },
+});
+
+const healthAdjustments = drawable<Survivor.State>({
+  draw({ context, state }) {
+    state.healthAdjustments = state.healthAdjustments.filter(
+      (healthAdjustment) => {
+        const diff = state.now - healthAdjustment.createdAt;
+        if (diff >= HEALTH_ADJUSTMENT_EXPIRES) {
+          return false;
+        }
+        const percent = diff / HEALTH_ADJUSTMENT_EXPIRES;
+        const font = 2 * FONT_SIZE * (1 - percent);
+        const x = Math.sin((2 * Math.PI * diff) / 1000);
+        const y = -TILE_SIZE * percent;
+        context.lineWidth = 1;
+        context.globalAlpha = 1 - percent;
+        context.fillStyle = "red";
+        context.textAlign = "center";
+        context.textBaseline = "bottom";
+        context.font = `${font}px Courier New`;
+        context.fillText(
+          `${healthAdjustment.adjustment}`,
+          healthAdjustment.x + x,
+          healthAdjustment.y + y
+        );
+        return true;
+      }
+    );
   },
 });
 
@@ -333,7 +366,14 @@ const experienceSpawner = drawable<Survivor.State>({
 const camera = drawable<Survivor.State>({
   x: 0,
   y: 0,
-  children: [tilemap, player, experienceSpawner, enemySpawner, attack],
+  children: [
+    tilemap,
+    player,
+    experienceSpawner,
+    enemySpawner,
+    attack,
+    healthAdjustments,
+  ],
   draw(config) {
     const { context, state } = config;
     context.save();
@@ -602,6 +642,7 @@ start<Survivor.State>({
       spawned: [],
       lastSpawnedAt: 0,
     },
+    healthAdjustments: [],
     isMenuVisible: true,
     menuVisibility: 1,
   },

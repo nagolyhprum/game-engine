@@ -380,6 +380,13 @@ export namespace Survivor {
     attackCooldown: number;
   }
 
+  export interface HealthAdjustment {
+    x: number;
+    y: number;
+    adjustment: number;
+    createdAt: number;
+  }
+
   export interface State extends Engine.GlobalState {
     tiles: TileData[][];
     player: {
@@ -407,6 +414,7 @@ export namespace Survivor {
       spawned: Enemy[];
       lastSpawnedAt: number;
     };
+    healthAdjustments: HealthAdjustment[];
     isMenuVisible: boolean;
     menuVisibility: number;
   }
